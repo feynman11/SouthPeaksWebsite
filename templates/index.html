@@ -3,9 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
     <title>
       South Peaks Cycling Club | {{ .Location }}
     </title>
+    <link rel="apple-touch-icon" sizes="180x180" href="static/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="static/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="static/favicon/favicon-16x16.png">
+    <link rel="manifest" href="static/favicon/site.webmanifest">
     <!-- Link to CSS served by Go -->
     <link rel="stylesheet" href="/static/style.css" />
     <link
@@ -37,7 +42,7 @@
         <section class="welcome">
           <h2>Welcome to South Peaks Cycling Club</h2>
           <p>
-            Based in the heart of {{ .Location }}, we're a passionate
+            Based in area around {{ .Location }}, we're a passionate
             community of cyclists exploring the beautiful Peak District and
             surrounding countryside. Whether you're a beginner looking to build
             confidence or an experienced rider seeking new challenges, SPCC

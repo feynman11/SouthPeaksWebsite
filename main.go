@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // TemplateData holds data to be passed to HTML templates
@@ -55,9 +56,9 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		CycleClub:    "CYCLE CLUB",
 		Location:     "Borrowash, Derbyshire",
 		Tagline:      "Ride Together, Grow Together",
-		StravaURL:    "https://www.strava.com/clubs/451869",    // Replace with actual
-		InstagramURL: "https://www.instagram.com/southpeakscc", // Replace with actual
-		CurrentYear:  2025,                                     // You can make this dynamic: time.Now().Year()
+		StravaURL:    "https://www.strava.com/clubs/451869",
+		InstagramURL: "https://www.instagram.com/southpeakscc",
+		CurrentYear:  time.Now().Year(),
 	}
 
 	err := tmpl.ExecuteTemplate(w, "index.html", data)
