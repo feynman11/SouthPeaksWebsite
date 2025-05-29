@@ -23,11 +23,11 @@
     <div class="container">
       <header class="hero">
         <div class="hero-content">
-          <h1 class="club-name">
-            <span class="south-peaks">{{ .ClubName }}</span>
-            <span class="spcc">{{ .SPCCAbbrev }}</span>
-            <span class="cycle-club">{{ .CycleClub }}</span>
-          </h1>
+          <img
+            src="/static/spcc_logo.jpg" {{/* Link to your logo */}}
+            alt="South Peaks Cycling Club Logo"
+            class="club-logo"
+          />
           <p class="location">{{ .Location }}</p>
           <p class="tagline">{{ .Tagline }}</p>
         </div>
@@ -49,7 +49,7 @@
           <h3>Connect With Us</h3>
           <div class="links-container">
             <a
-              href="{{ .StravaURL }}" {{/* <-- Removed | URL */}}
+              href="{{ .StravaURL }}"
               target="_blank"
               rel="noopener noreferrer"
               class="social-link strava"
@@ -68,7 +68,7 @@
             </a>
 
             <a
-              href="{{ .InstagramURL }}" {{/* <-- Removed | URL */}}
+              href="{{ .InstagramURL }}"
               target="_blank"
               rel="noopener noreferrer"
               class="social-link instagram"
