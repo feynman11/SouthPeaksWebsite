@@ -1,0 +1,16 @@
+steps:
+  # Step 1: Deploy to App Engine
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'app'
+      - 'deploy'
+      - '--quiet'
+      - '--promote'
+
+# Optional: Set timeout for the build
+timeout: '600s'
+
+# Optional: Specify which files trigger builds (if using Cloud Build triggers)
+options:
+  logging: CLOUD_LOGGING_ONLY
