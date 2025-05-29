@@ -201,6 +201,24 @@ body {
   margin-bottom: 0.25rem;
 }
 
+.strava-widget {
+  text-align: center; /* Center the heading and the widget container */
+  margin-top: 3rem; /* Add space above the section */
+}
+
+.strava-widget h3 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1.5rem; /* Space below the heading */
+}
+
+.widget-container {
+  /* Optional: Further styling for the container around the iframe */
+  display: flex;
+  justify-content: center; /* Center the iframe within this container */
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
