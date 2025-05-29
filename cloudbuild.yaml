@@ -1,16 +1,19 @@
 steps:
-  # Step 1: Deploy to App Engine
+  # This step directly deploys your application to App Engine
+  # using the configuration in your app.yaml file.
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
       - 'app'
       - 'deploy'
-      - '--quiet'
-      - '--promote'
+      - 'app.yaml' # Explicitly specify your app.yaml
+      - '--project=${PROJECT_ID}' # Ensures it deploys to the correct project
+      - '--quiet' # Suppresses interactive prompts
+      - '--promote' # Makes this version receive all traffic immediately
 
-# Optional: Set timeout for the build
+# Optional: Set a timeout for the build
 timeout: '600s'
 
-# Optional: Specify which files trigger builds (if using Cloud Build triggers)
+# Optional: Configure logging
 options:
   logging: CLOUD_LOGGING_ONLY
