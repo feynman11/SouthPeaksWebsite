@@ -1,7 +1,4 @@
-# runtime: python39
-# For purely static sites, you can often omit the 'runtime' line.
-# If you keep it, python39 is a lightweight choice. App Engine will use
-# a Google-managed, nginx-based server for static files regardless.
+runtime: go119
 
 handlers:
   # Handler for the root URL (e.g., your-club-url.com/)
