@@ -1,19 +1,18 @@
-runtime: go119
+runtime: go122 # Or your desired Go version (e.g., go1.21, go1.20)
+# instance_class: F1 # Optional: default is F1, adjust if needed
 
 handlers:
-  # Handler for the root URL (e.g., your-club-url.com/)
-  # This serves your main index.html page.
-  - url: /
-    static_files: index.html # Specifies the file to serve
-    upload: index.html # Specifies the file to upload for this handler
-    secure: always # Optional, but recommended: Redirects HTTP to HTTPS
+  # Serve static files (CSS, JS, images) from the 'static' directory
+  - url: /static
+    static_dir: static
+    secure: always
 
-  # Handler for all other static files (e.g., CSS, JavaScript, images)
-  # The (.*) is a regular expression that captures the path.
-  - url: /(.*)
-    static_files: \1 # Serves the file matching the captured path (e.g., /style.css serves style.css)
-    upload: (.*) # Uploads all other files in your project directory
-    secure: always # Optional, but recommended: Redirects HTTP to HTTPS
+  # All other requests are handled by the Go application.
+  # App Engine will build and run your main.go.
+  - url: /.*
+    script: _go_app # This special value tells App Engine to use the Go app
+    secure: always
 
-# Optional: You can add default expiration for static assets
-# default_expiration: "7d"
+# Optional: Environment variables for your Go app
+# env_variables:
+#   MY_VARIABLE: "my_value"
