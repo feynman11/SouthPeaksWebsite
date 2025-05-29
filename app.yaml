@@ -1,0 +1,22 @@
+# runtime: python39
+# For purely static sites, you can often omit the 'runtime' line.
+# If you keep it, python39 is a lightweight choice. App Engine will use
+# a Google-managed, nginx-based server for static files regardless.
+
+handlers:
+  # Handler for the root URL (e.g., your-club-url.com/)
+  # This serves your main index.html page.
+  - url: /
+    static_files: index.html # Specifies the file to serve
+    upload: index.html # Specifies the file to upload for this handler
+    secure: always # Optional, but recommended: Redirects HTTP to HTTPS
+
+  # Handler for all other static files (e.g., CSS, JavaScript, images)
+  # The (.*) is a regular expression that captures the path.
+  - url: /(.*)
+    static_files: \1 # Serves the file matching the captured path (e.g., /style.css serves style.css)
+    upload: (.*) # Uploads all other files in your project directory
+    secure: always # Optional, but recommended: Redirects HTTP to HTTPS
+
+# Optional: You can add default expiration for static assets
+# default_expiration: "7d"
