@@ -1,3 +1,4 @@
+/* General Body and Layout */
 * {
   margin: 0;
   padding: 0;
@@ -9,20 +10,24 @@ body {
     sans-serif;
   line-height: 1.6;
   color: #333;
-  /* Adjusted background gradient to match logo tones */
+  /* Adjusted background gradient to match logo tones (grays, black, red) */
   background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 60%, #8b0000 100%);
   min-height: 100vh;
+  display: flex; /* Use flex to ensure footer stays at bottom on short content */
+  flex-direction: column;
 }
 
 .container {
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
-  min-height: 100vh;
+  min-height: 100vh; /* Ensures content fills at least viewport height */
   display: flex;
   flex-direction: column;
+  flex-grow: 1; /* Allows container to grow and push footer down */
 }
 
+/* Hero Section (Header) */
 .hero {
   text-align: center;
   margin-bottom: 3rem;
@@ -69,7 +74,7 @@ body {
   margin-bottom: 1rem; /* Space below tagline */
 }
 
-/* --- New Navigation Styles --- */
+/* Main Navigation */
 .main-nav {
   margin-top: 1rem; /* Space below tagline */
   display: flex;
@@ -81,13 +86,16 @@ body {
 
 .nav-link {
   padding: 0.8rem 1.5rem;
-  background-color: #dc143c; /* A primary accent color */
+  background-color: #dc143c; /* Default club accent color for nav links */
   color: white;
   text-decoration: none;
   border-radius: 5px;
   font-weight: 600;
   transition: background-color 0.3s ease;
   white-space: nowrap; /* Prevent breaking in the middle of text */
+  display: inline-flex; /* Allow icon next to text */
+  align-items: center; /* Vertically align icon and text */
+  gap: 0.5rem; /* Space between icon and text */
 }
 
 .nav-link:hover {
@@ -109,11 +117,31 @@ body {
   margin-right: 1rem; /* Space between welcome and links */
   white-space: nowrap;
 }
-/* --- End New Navigation Styles --- */
+
+/* Strava Login Button Specific Styles */
+.nav-link.strava-login-button {
+  background-color: #fc4c02; /* Strava Orange */
+  color: white; /* White text/icon */
+  border: 1px solid #e63900; /* Slightly darker border */
+  padding: 0.8rem 1.8rem; /* Slightly more padding to match typical button size */
+  font-size: 1rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+
+.nav-link.strava-login-button:hover {
+  background-color: #e63900; /* Darker orange on hover */
+  transform: translateY(-1px); /* Slight lift */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.nav-link.strava-login-button svg {
+  fill: white; /* Ensure SVG icon is white */
+}
 
 
+/* Main Content Area */
 .main-content {
-  flex: 1;
+  flex: 1; /* Allows main content to grow and push footer down */
   background: white;
   border-radius: 20px;
   padding: 3rem;
@@ -121,6 +149,7 @@ body {
   margin-bottom: 2rem;
 }
 
+/* Welcome Section */
 .welcome {
   text-align: center;
   margin-bottom: 3rem;
@@ -141,6 +170,7 @@ body {
   line-height: 1.8;
 }
 
+/* Social Links Section */
 .social-links {
   text-align: center;
   margin-bottom: 3rem;
@@ -197,6 +227,7 @@ body {
   background: linear-gradient(45deg, #e6683c 0%, #dc2743 25%, #cc2366 50%, #bc1888 75%, #8b0a50 100%);
 }
 
+/* About Section */
 .about {
   margin-top: 3rem;
 }
@@ -236,7 +267,7 @@ body {
   margin-bottom: 1rem;
 }
 
-/* Styling for lists within info-cards */
+/* Styling for lists within info-cards (Regular Group Rides) */
 .info-card ul {
   list-style: none; /* Remove default bullet points */
   padding: 0;
@@ -254,12 +285,12 @@ body {
   border-bottom: none; /* No border on the last item */
 }
 
-
 .info-card p {
   color: #4a5568;
   line-height: 1.6;
 }
 
+/* Strava Widget Section */
 .strava-widget {
   text-align: center; /* Center the heading and the widget container */
   margin-top: 3rem; /* Add space above the section */
@@ -279,7 +310,7 @@ body {
 }
 
 
-/* --- Styles for Members Page (copied here for a full CSS file) --- */
+/* Members Page Specific Styles (included for completeness) */
 .members-list {
   text-align: center;
   margin-bottom: 3rem;
@@ -368,9 +399,22 @@ body {
 .toggle-paid-button:hover {
   background-color: #0056b3;
 }
-/* --- End Styles for Members Page --- */
 
 
+/* Footer */
+.footer {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8); /* White with some transparency */
+  font-size: 0.9rem;
+  margin-top: 2rem; /* Add some space above the footer */
+  padding-bottom: 1rem; /* Padding at the very bottom */
+}
+
+.footer p:first-child {
+  margin-bottom: 0.25rem;
+}
+
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
@@ -417,6 +461,10 @@ body {
 
   .ride-info {
     grid-template-columns: 1fr;
+  }
+
+  .members-grid {
+    grid-template-columns: 1fr; /* Stack members vertically on small screens */
   }
 }
 
