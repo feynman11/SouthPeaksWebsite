@@ -153,8 +153,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Location:     "Borrowash, Derbyshire",
 		Tagline:      "Ride Together, Grow Together",
-		StravaURL:    "https://www.strava.com/clubs/your-club-id",
-		InstagramURL: "https://www.instagram.com/your-instagram-handle",
+		StravaURL:    "https://www.strava.com/clubs/451869",
+		InstagramURL: "https://www.instagram.com/southpeakscc",
 		CurrentYear:  time.Now().Year(),
 		IsLoggedIn:   isLoggedIn,
 		User:         user,
