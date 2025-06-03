@@ -36,12 +36,19 @@ body {
   border-radius: 20px;
   padding: 3rem 2rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex; /* Added for navigation alignment */
+  flex-direction: column; /* Added for navigation alignment */
+  align-items: center; /* Center items horizontally */
 }
 
 .club-logo {
-  max-width: 350px; /* Adjust as needed */
-  height: auto;
+  /* Scale logo based on container size */
+  max-width: 60%; /* Adjust the percentage as needed */
+  height: auto; /* Maintain aspect ratio */
   margin-bottom: 1rem;
+  display: block; /* Treat the image as a block element for centering */
+  margin-left: auto; /* Center the image horizontally */
+  margin-right: auto; /* Center the image horizontally */
 }
 
 .location {
@@ -59,7 +66,51 @@ body {
   color: rgba(255, 255, 255, 0.9);
   font-weight: 300;
   font-style: italic;
+  margin-bottom: 1rem; /* Space below tagline */
 }
+
+/* --- New Navigation Styles --- */
+.main-nav {
+  margin-top: 1rem; /* Space below tagline */
+  display: flex;
+  gap: 1rem; /* Space between links */
+  flex-wrap: wrap; /* Allow links to wrap on small screens */
+  justify-content: center; /* Center links */
+  align-items: center; /* Vertically align items in the nav */
+}
+
+.nav-link {
+  padding: 0.8rem 1.5rem;
+  background-color: #dc143c; /* A primary accent color */
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+  white-space: nowrap; /* Prevent breaking in the middle of text */
+}
+
+.nav-link:hover {
+  background-color: #a0002b;
+}
+
+.nav-link.logout-link {
+  background-color: #555; /* Different color for logout */
+}
+
+.nav-link.logout-link:hover {
+  background-color: #333;
+}
+
+.welcome-message {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin-right: 1rem; /* Space between welcome and links */
+  white-space: nowrap;
+}
+/* --- End New Navigation Styles --- */
+
 
 .main-content {
   flex: 1;
@@ -185,20 +236,28 @@ body {
   margin-bottom: 1rem;
 }
 
+/* Styling for lists within info-cards */
+.info-card ul {
+  list-style: none; /* Remove default bullet points */
+  padding: 0;
+  margin: 0;
+  text-align: left; /* Align list items to the left */
+}
+
+.info-card ul li {
+  color: #4a5568;
+  padding: 0.25rem 0;
+  border-bottom: 1px dotted #e2e8f0; /* Subtle separator */
+}
+
+.info-card ul li:last-child {
+  border-bottom: none; /* No border on the last item */
+}
+
+
 .info-card p {
   color: #4a5568;
   line-height: 1.6;
-}
-
-.footer {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.8); /* White with some transparency */
-  font-size: 0.9rem;
-  margin-top: 2rem; /* Add some space above the footer */
-}
-
-.footer p:first-child {
-  margin-bottom: 0.25rem;
 }
 
 .strava-widget {
@@ -219,6 +278,99 @@ body {
   justify-content: center; /* Center the iframe within this container */
 }
 
+
+/* --- Styles for Members Page (copied here for a full CSS file) --- */
+.members-list {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.members-list h2 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+
+.admin-note {
+  font-style: italic;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+.members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.member-card {
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.2s ease;
+  border: 1px solid #eee;
+}
+
+.member-card:hover {
+  transform: translateY(-5px);
+}
+
+.member-pic {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1rem;
+  border: 3px solid #dc143c; /* Accent color border */
+}
+
+.member-card h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.paid-status {
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.paid {
+  background-color: #d4edda; /* Light green */
+  color: #155724; /* Dark green text */
+}
+
+.unpaid {
+  background-color: #f8d7da; /* Light red */
+  color: #721c24; /* Dark red text */
+}
+
+.toggle-paid-button {
+  background-color: #007bff; /* Blue for action */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-paid-button:hover {
+  background-color: #0056b3;
+}
+/* --- End Styles for Members Page --- */
+
+
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
@@ -229,7 +381,19 @@ body {
   }
 
   .club-logo {
-    max-width: 250px; /* Smaller logo on smaller screens */
+    /* Adjust percentage on smaller screens */
+    max-width: 70%;
+  }
+
+  .main-nav {
+    flex-direction: column; /* Stack nav links vertically on small screens */
+    gap: 0.75rem;
+  }
+
+  .nav-link, .welcome-message {
+    width: 100%; /* Make links/message take full width */
+    text-align: center;
+    margin-right: 0; /* Remove right margin */
   }
 
   .main-content {
@@ -258,6 +422,10 @@ body {
 
 @media (max-width: 480px) {
   .club-logo {
-    max-width: 200px; /* Even smaller on very small screens */
+    /* Adjust percentage on very small screens */
+    max-width: 80%;
+  }
+  .main-nav {
+    gap: 0.5rem;
   }
 }

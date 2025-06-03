@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>South Peaks Cycling Club | Members</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="static/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="static/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="static/favicon/favicon-16x16.png">
+    <link rel="manifest" href="static/favicon/site.webmanifest">
+    <link rel="stylesheet" href="/static/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/htmx.org@1.9.12"
+        integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header class="hero">
+            <div class="hero-content">
+                <img src="/static/spcc_logo.jpg" alt="South Peaks Cycling Club Logo" class="club-logo" />
+                <p class="location">{{ .Location }}</p>
+                <p class="tagline">Welcome, {{ .User.FirstName }}!</p>
+                <p><a href="/logout" class="social-link logout-link">Logout</a></p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="members-list">
+                <h2>Club Members</h2>
+                {{ if .IsAdmin }}
+                <p class="admin-note">
+                    (You are an admin. You can toggle paid status below.)
+                </p>
+                {{ end }}
+
+                <div class="members-grid">
+                    {{ range .Members }}
+                    <div class="member-card">
+                        <img src="{{ .ProfilePicURL }}" alt="{{ .FirstName }} {{ .LastName }}" class="member-pic" />
+                        <h4>{{ .FirstName }} {{ .LastName }}</h4>
+                        <p>
+                            Status:
+                            {{ if .IsPaidMember }}
+                            <span class="paid-status paid">Paid Member</span>
+                            {{ else }}
+                            <span class="paid-status unpaid">Unpaid Member</span>
+                            {{ end }}
+                        </p>
+
+                    </div>
+                    {{ else }}
+                    <p>No members found.</p>
+                    {{ end }}
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; {{ .CurrentYear }} South Peaks Cycling Club. All rights reserved.</p>
+            <p>{{ .Location }}, UK</p>
+        </footer>
+    </div>
+</body>
+
+</html>
