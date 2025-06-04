@@ -29,6 +29,9 @@
       <nav class="sticky-nav">
         {{ if .IsLoggedIn }}
         <a href="/members" class="nav-link-small">Members Area</a>
+        {{ if .User.IsPaidMember }} {{/* Show Routes link only for paid members */}}
+        <a href="/routes" class="nav-link-small">Routes</a>
+        {{ end }}
         <a href="/logout" class="nav-link-small logout-link-small">Logout</a>
         {{ else }}
         <a href="/login/strava" class="nav-link-small strava-login-button-small">
@@ -49,11 +52,15 @@
       <div class="hero-content">
         <img src="/static/spcc_logo.jpg" alt="South Peaks Cycling Club Logo" class="club-logo" />
         <p class="location">{{ .Location }}</p>
+        {{/* REMOVED: <p class="tagline">{{ .Tagline }}</p> */}}
 
         <nav class="main-nav">
           {{ if .IsLoggedIn }}
           <p class="welcome-message">Welcome, {{ .User.FirstName }}!</p>
           <a href="/members" class="nav-link">Members Area</a>
+          {{ if .User.IsPaidMember }} {{/* Show Routes link only for paid members */}}
+          <a href="/routes" class="nav-link">Routes</a>
+          {{ end }}
           <a href="/logout" class="nav-link logout-link">Logout</a>
           {{ else }}
           <a href="/login/strava" class="nav-link strava-login-button">

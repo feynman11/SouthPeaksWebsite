@@ -421,12 +421,36 @@ body {
   margin-bottom: 1.5rem;
 }
 
-.members-grid {
+/* Styles for the new split grids */
+.members-grid-container h3 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-top: 3rem; /* Space above section heading */
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.members-grid-container h3.unpaid-heading {
+  color: #cc0000; /* Distinct color for unpaid heading */
+}
+
+.members-grid { /* This class is applied to both paid-members-grid and unpaid-members-grid */
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
   justify-content: center;
-  margin-top: 2rem;
+  margin-bottom: 2rem; /* Space below each grid */
+}
+
+.no-members-message {
+  font-style: italic;
+  color: #777;
+  grid-column: 1 / -1; /* Make it span all columns in the grid */
+  text-align: center;
+  padding: 1rem;
+  background-color: #f8f8f8;
+  border-radius: 8px;
 }
 
 .member-card {
@@ -459,6 +483,8 @@ body {
   margin-bottom: 0.5rem;
 }
 
+/* Removed individual paid/unpaid status spans as content is now grouped */
+/*
 .paid-status {
   font-weight: 700;
   padding: 0.3rem 0.6rem;
@@ -468,14 +494,15 @@ body {
 }
 
 .paid {
-  background-color: #d4edda; /* Light green */
-  color: #155724; /* Dark green text */
+  background-color: #d4edda;
+  color: #155724;
 }
 
 .unpaid {
-  background-color: #f8d7da; /* Light red */
-  color: #721c24; /* Dark red text */
+  background-color: #f8d7da;
+  color: #721c24;
 }
+*/
 
 .toggle-paid-button {
   background-color: #007bff; /* Blue for action */
@@ -597,6 +624,301 @@ body {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* Routes Page Styles */
+.routes-page-intro {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.routes-page-intro h2 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+.routes-page-intro p {
+  font-size: 1.1rem;
+  color: #4a5568;
+}
+
+/* Submit Route Form */
+.submit-route-form {
+  background-color: #f5f5f5;
+  border-radius: 15px;
+  padding: 2.5rem;
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+.submit-route-form h3 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+.submit-route-form p {
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+.submit-route-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.form-group {
+  text-align: left;
+}
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+.form-group input[type="text"]:focus,
+.form-group input[type="url"]:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #dc143c; /* Accent color */
+}
+
+.submit-route-button {
+  background-color: #007bff; /* Blue */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+.submit-route-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* HTMX indicator for form submission */
+.htmx-indicator {
+  margin-left: 0.5rem; /* Reduced margin */
+  font-size: 0.8rem; /* Slightly smaller font */
+  color: #555;
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.2s ease-in-out;
+}
+.htmx-request .htmx-indicator {
+  opacity: 1; /* Visible during request */
+}
+.htmx-request.htmx-indicator { /* For indicators on elements being swapped */
+  opacity: 1;
+}
+
+/* Warning Message Box (for submit form) */
+.submit-route-form.warning-message-box {
+  background-color: #fff3cd; /* Light yellow */
+  border: 1px solid #ffeeba;
+  border-left: 5px solid #ffc107; /* Yellow accent */
+  color: #856404; /* Dark yellow text */
+}
+.submit-route-form.warning-message-box h3,
+.submit-route-form.warning-message-box p {
+  color: #856404; /* Dark yellow text */
+}
+.inline-link {
+  color: #007bff;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+.inline-link:hover {
+  color: #0056b3;
+}
+
+
+/* My Submitted Routes Section */
+.my-routes-list {
+  background-color: #e6f7ff; /* Light blue background */
+  border-radius: 15px;
+  padding: 2.5rem;
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+.my-routes-list h3 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+.my-routes-list p {
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+.my-routes-list form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-width: 500px;
+  margin: 0 auto 2rem auto; /* Space below form */
+}
+.my-routes-list .form-group label {
+  text-align: left;
+}
+
+.my-routes-list .routes-grid.my-routes-grid {
+  border-top: 1px dashed #ccc;
+  padding-top: 2rem;
+  margin-top: 2rem;
+}
+
+
+/* All Routes List Display */
+.all-routes-list h3 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.routes-list-container {
+  /* This is the HTMX target. Styles directly below will apply to the fragment. */
+  margin-bottom: 2rem; /* Space below the entire route list section */
+}
+
+.routes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.route-card {
+  background: #f8f8f8;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  text-align: left;
+  transition: transform 0.2s ease;
+  border-left: 5px solid #dc143c; /* Accent color */
+}
+
+.route-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.route-card h4 {
+  font-size: 1.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.route-card h4 a {
+  color: #1a1a1a;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.route-card h4 a:hover {
+  color: #dc143c; /* Accent color on hover */
+}
+
+.route-card p {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 0.4rem;
+}
+
+.route-card p.route-classification span {
+  font-weight: 700;
+  color: #dc143c; /* Classify text accent */
+}
+
+.route-card p.route-date {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 1rem;
+  text-align: right;
+}
+
+.no-routes-message {
+  font-style: italic;
+  color: #777;
+  text-align: center;
+  padding: 1rem;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+/* Route Card Actions (Delete Button) */
+.route-card .route-actions {
+  margin-top: 1rem;
+  text-align: right;
+}
+
+.route-card .delete-route-button {
+  background-color: #dc3545; /* Red for danger */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.route-card .delete-route-button:hover {
+  background-color: #c82333; /* Darker red on hover */
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.form-separator {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #666;
+    margin: 1.5rem auto;
+    position: relative;
+    width: 80%; /* Adjust as needed */
+}
+
+.form-separator::before,
+.form-separator::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%; /* Adjust width of line */
+    height: 1px;
+    background-color: #ccc;
+}
+
+.form-separator::before {
+    left: 0;
+}
+
+.form-separator::after {
+    right: 0;
+}
 
 /* Footer */
 .footer {
@@ -679,6 +1001,14 @@ body {
   .delete-account-button {
     font-size: 1rem;
     padding: 0.8rem 1.5rem;
+  }
+
+  .submit-route-form {
+    padding: 1.5rem;
+  }
+
+  .my-routes-list {
+    padding: 1.5rem;
   }
 }
 

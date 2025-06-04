@@ -1,0 +1,29 @@
+{{/* templates/routes_list_fragment.html */}}
+
+<div class="routes-list-container" id="routes-list-container">
+  {{ if .Routes }}
+  <div class="routes-grid">
+    {{ range .Routes }}
+    <div class="route-card">
+      <h4><a href="{{ .URL }}" target="_blank" rel="noopener noreferrer">{{ .Name }}</a></h4>
+      <p class="route-classification">Class: <span>{{ .Classify }}</span></p>
+      <p class="route-submitter">Submitted by: {{ .SubmittedByUserName }}</p>
+      <p class="route-date">On: {{ .SubmittedAt.Format "Jan 2, 2006" }}</p>
+      <div class="route-actions">
+        {{/* Convert $.User.StravaID to string for comparison */}}
+        {{ if or (eq .SubmittedByUserID (printf "%d" $.User.StravaID)) $.IsAdmin }} {{/* FIX HERE */}}
+        <form hx-post="/routes/delete" hx-target="#routes-list-container" hx-swap="outerHTML"
+          hx-confirm="Are you sure you want to delete this route?" hx-indicator="#delete-route-indicator-{{ .ID }}">
+          <input type="hidden" name="routeID" value="{{ .ID }}">
+          <button type="submit" class="delete-route-button">Delete</button>
+          <span id="delete-route-indicator-{{ .ID }}" class="htmx-indicator">Deleting...</span>
+        </form>
+        {{ end }}
+      </div>
+    </div>
+    {{ end }}
+  </div>
+  {{ else }}
+  <p class="no-routes-message">No routes have been submitted yet.</p>
+  {{ end }}
+</div>

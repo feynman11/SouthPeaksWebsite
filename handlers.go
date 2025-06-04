@@ -6,11 +6,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil" // For reading response body
 	"log"
 	"net/http"
 	"strconv"
+	"strings" // For string manipulation (search)
 	"time"
 
+	// "github.com/gorilla/sessions" // This import is not needed here as 'store' is global in main.go
 	"golang.org/x/oauth2"
 )
 
@@ -20,6 +23,18 @@ type StravaAthlete struct {
 	FirstName string `json:"firstname"`
 	LastName  string `json:"lastname"`
 	Profile   string `json:"profile"` // URL to profile picture
+}
+
+// Represents a Strava Route from the API (simplified)
+type StravaRouteAPI struct {
+	ID            int64       `json:"id"`
+	Name          string      `json:"name"`
+	Distance      float64     `json:"distance"`       // Meters
+	ElevationGain float64     `json:"elevation_gain"` // Meters
+	Type          interface{} `json:"type"`           // Can be string or number from Strava API
+	SubType       interface{} `json:"sub_type"`       // Can be string or number from Strava API
+	// You might add more fields from Strava API if needed for display
+	// e.g., Map struct for polyline, segments
 }
 
 // stravaLoginHandler redirects user to Strava for OAuth authorization
@@ -115,7 +130,7 @@ func stravaCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["userID"] = athlete.ID
 	session.Save(r, w)
 
-	http.Redirect(w, r, "/", http.StatusFound) 
+	http.Redirect(w, r, "/", http.StatusFound) // Redirect to home page
 }
 
 // getStravaAthleteDetails fetches the current athlete's details using their access token
@@ -168,7 +183,7 @@ func membersHandler(w http.ResponseWriter, r *http.Request) {
 		CurrentYear: time.Now().Year(),
 		IsLoggedIn:  true,
 		User:        user,
-		IsAdmin:     user.IsAdmin, // Pass admin status to template
+		IsAdmin:     user.IsAdmin,
 		Members:     members,
 	}
 
@@ -183,7 +198,7 @@ func membersHandler(w http.ResponseWriter, r *http.Request) {
 // adminTogglePaidHandler allows an admin to toggle paid status for a member
 func adminTogglePaidHandler(w http.ResponseWriter, r *http.Request) {
 	user, isLoggedIn := getUserFromSession(r)
-	if !isLoggedIn || !user.IsAdmin {
+	if !isLoggedIn || !user.IsAdmin { // Must be logged in AND an admin
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -215,31 +230,29 @@ func adminTogglePaidHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// --- NEW: Fetch all members again to re-render the list ---
-	members, err := GetAllUsers(ctx) // Re-fetch data after update
+	// After submission, re-fetch all members to re-render the list dynamically via HTMX
+	members, err := GetAllUsers(ctx)
 	if err != nil {
 		log.Printf("Error fetching all members after toggle: %v", err)
-		http.Error(w, "Failed to re-load members list", http.StatusInternalServerError)
+		http.Error(w, "Failed to load updated members list", http.StatusInternalServerError)
 		return
 	}
 
 	data := TemplateData{ // Populate data for the fragment
-		IsAdmin: user.IsAdmin, // Ensure admin status is passed to the fragment
+		IsAdmin: user.IsAdmin,
 		Members: members,
 	}
 
-	// --- NEW: Render only the members_grid_fragment.html template ---
-	// Set Content-Type header to tell HTMX it's HTML
+	// Render only the members_grid_fragment.html template for HTMX swap
 	w.Header().Set("Content-Type", "text/html")
-	err = tmpl.ExecuteTemplate(w, "members_grid_fragment.html", data) // Render the fragment
+	err = tmpl.ExecuteTemplate(w, "members_grid_fragment.html", data)
 	if err != nil {
 		log.Printf("Error executing members_grid_fragment template: %v", err)
 		http.Error(w, "Failed to render updated list", http.StatusInternalServerError)
 	}
-	// No explicit return needed if ExecuteTemplate completes successfully, as it's the last action.
 }
 
-// deleteAccountHandler allows users to delete their account
+// deleteAccountHandler handles user account deletion
 func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, "session-name")
 	if err != nil {
@@ -248,7 +261,6 @@ func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Must be logged in
 	userIDVal := session.Values["userID"]
 	if userIDVal == nil {
 		http.Error(w, "Not logged in", http.StatusUnauthorized)
@@ -266,16 +278,391 @@ func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Clear user session
-	session.Values["userID"] = nil // Clear user ID
-	session.Options.MaxAge = -1    // Immediately expire the cookie
+	session.Values["userID"] = nil
+	session.Options.MaxAge = -1
 	if err := session.Save(r, w); err != nil {
 		log.Printf("Error saving session after delete: %v", err)
-		// Try to continue redirecting even if session save fails, as account is deleted
 	}
 
 	log.Printf("Account for Strava ID %d deleted successfully.", userID)
 
+	// Use HX-Redirect for a clean browser-side redirect
 	w.Header().Set("HX-Redirect", "/") // Tell HTMX to redirect the browser to the home page
-	w.WriteHeader(http.StatusOK)       // Send a 200 OK or 204 No Content
+	w.WriteHeader(http.StatusOK)
 	return
+}
+
+// routesHandler displays the routes page
+func routesHandler(w http.ResponseWriter, r *http.Request) {
+	user, isLoggedIn := getUserFromSession(r)
+	if !isLoggedIn {
+		http.Redirect(w, r, "/login/strava", http.StatusFound) // Must be logged in to view routes
+		return
+	}
+
+	ctx := r.Context()
+	routes, err := GetAllRoutes(ctx) // All club routes from Firestore
+	if err != nil {
+		log.Printf("Error fetching all club routes for routes page: %v", err)
+		http.Error(w, "Failed to load club routes list", http.StatusInternalServerError)
+		return
+	}
+
+	userSubmittedRoutes := []Route{} // Routes previously submitted by current user to the club
+	if isLoggedIn { // Only fetch user's routes if logged in
+		// Convert int64 StravaID to string for GetUserRoutes
+		userSubmittedRoutes, err = GetUserRoutes(ctx, strconv.FormatInt(user.StravaID, 10))
+		if err != nil { // Corrected: Using 'err' here
+			log.Printf("Error fetching user's previously submitted routes: %v", err) // Corrected: Using 'err' here
+		}
+	}
+
+	// This is for the initial load of the Strava routes dropdown.
+	// It's still necessary here for the initial page render.
+	stravaUserRoutesForDropdown := []StravaRouteAPI{}
+	if isLoggedIn && user.IsPaidMember { // Only fetch Strava routes if paid member
+		accessToken, err := GetFreshStravaToken(ctx, user)
+		if err != nil {
+			log.Printf("Error getting fresh Strava token for routes page initial load: %v", err)
+			// User will see an error in the form, but page will still load other content
+		} else {
+			var fetchErr error
+			stravaUserRoutesForDropdown, fetchErr = fetchStravaUserRoutes(ctx, accessToken, user.StravaID)
+			if fetchErr != nil {
+				log.Printf("Error fetching Strava routes for routes page initial load: %v", fetchErr)
+				// User will see an error in the form if routes couldn't be loaded
+			}
+		}
+	}
+
+	data := TemplateData{
+		Location:    "Borrowash, Derbyshire",
+		CurrentYear: time.Now().Year(),
+		IsLoggedIn:  true,
+		User:        user,
+		IsAdmin:     user.IsAdmin,
+		Routes:      routes,                      // All club routes
+		UserRoutes:  userSubmittedRoutes,         // User's previously submitted club routes
+		StravaUserRoutes: stravaUserRoutesForDropdown, // For initial dropdown population
+	}
+
+	// Remove: w.WriteHeader(http.StatusOK) HERE, it's superfluous as tmpl.ExecuteTemplate does it
+	err = tmpl.ExecuteTemplate(w, "routes.html", data) // Render routes template
+	if err != nil {
+		log.Printf("Error executing routes template: %v", err)
+		// Only send http.Error if template execution fails
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+// fetchStravaUserRoutes makes an API call to Strava to get a user's routes.
+// This function fetches up to per_page=200 routes. For pagination, would need more logic.
+func fetchStravaUserRoutes(ctx context.Context, accessToken string, athleteID int64) ([]StravaRouteAPI, error) {
+	client := stravaOAuthConf.Client(ctx, &oauth2.Token{AccessToken: accessToken})
+
+	url := fmt.Sprintf("https://www.strava.com/api/v3/athletes/%d/routes?per_page=200", athleteID)
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get athlete routes from Strava API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Strava API route fetch failed for user %d. Status: %d, Body: %s", athleteID, resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("strava API route fetch returned status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var stravaRoutes []StravaRouteAPI
+	if err := json.NewDecoder(resp.Body).Decode(&stravaRoutes); err != nil {
+		return nil, fmt.Errorf("failed to decode Strava routes JSON: %w", err)
+	}
+
+	return stravaRoutes, nil
+}
+
+// searchStravaRoutesHandler handles HTMX requests to search/filter Strava routes for a user
+// It returns HTML <option> tags to update the select dropdown.
+func searchStravaRoutesHandler(w http.ResponseWriter, r *http.Request) {
+	user, isLoggedIn := getUserFromSession(r)
+	if !isLoggedIn {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if !user.IsPaidMember {
+		http.Error(w, "Forbidden: Only paid members can search Strava routes", http.StatusForbidden)
+		return
+	}
+
+	query := r.URL.Query().Get("q") // The search query from HTMX (e.g., hx-trigger="keyup changed" or hx-trigger="search")
+	ctx := r.Context()
+
+	// This is the source of truth for the dropdown, fetched directly from Strava
+	accessToken, err := GetFreshStravaToken(ctx, user)
+	if err != nil {
+		log.Printf("Error getting fresh Strava token for search: %v", err)
+		w.Write([]byte(`<option value="">-- Failed to load routes --</option>`)) // HTMX expects options
+		return
+	}
+
+	allStravaRoutes, fetchErr := fetchStravaUserRoutes(ctx, accessToken, user.StravaID) // Fetches all up to per_page limit
+	if fetchErr != nil {
+		log.Printf("Error fetching all Strava routes for search: %v", fetchErr)
+		w.Write([]byte(`<option value="">-- Error fetching routes --</option>`)) // HTMX expects options
+		return
+	}
+
+	filteredRoutes := []StravaRouteAPI{}
+	if query == "" {
+		// If no query, return a subset or default message. For search, usually return all.
+		filteredRoutes = allStravaRoutes // Return all initially, or a sensible default
+	} else {
+		lowerQuery := strings.ToLower(query)
+		for _, route := range allStravaRoutes {
+			if strings.Contains(strings.ToLower(route.Name), lowerQuery) {
+				filteredRoutes = append(filteredRoutes, route)
+			}
+		}
+	}
+
+	var optionsHTML strings.Builder
+	optionsHTML.WriteString(`<option value="">-- Select a Strava Route --</option>`) // Always include an empty default
+	if len(filteredRoutes) == 0 && query != "" {
+		optionsHTML.WriteString(fmt.Sprintf(`<option value="" disabled>-- No matching routes for "%s" --</option>`, query))
+	} else if len(filteredRoutes) == 0 && query == "" {
+		optionsHTML.WriteString(`<option value="" disabled>-- No Strava Routes found --</option>`) // Initial empty state if no routes
+	} else {
+		for _, route := range filteredRoutes {
+			optionsHTML.WriteString(fmt.Sprintf(
+				`<option value="%d">%s (%.1fkm, %.0fm Gain)</option>`,
+				route.ID,
+				route.Name,
+				route.Distance/1000, // Convert meters to kilometers
+				route.ElevationGain,
+			))
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(optionsHTML.String()))
+}
+
+
+// submitRouteHandler handles the submission (creation or re-classification) of routes
+func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
+	user, isLoggedIn := getUserFromSession(r)
+	if !isLoggedIn {
+		http.Error(w, "Unauthorized: Not logged in", http.StatusUnauthorized)
+		return
+	}
+	if !user.IsPaidMember {
+		http.Error(w, "Forbidden: Only paid members can submit or modify routes", http.StatusForbidden)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	selectedRouteID := r.FormValue("selectedRouteID")       // From "My Submitted Routes" dropdown
+	stravaRouteSelectID := r.FormValue("stravaRouteSelect") // From Strava API dropdown
+	routeClassify := r.FormValue("routeClassify")
+
+	ctx := r.Context()
+	var routeToSave *Route // Will hold the route to create or update
+
+	if selectedRouteID != "" {
+		// --- Scenario 1: User is re-classifying one of their existing submitted club routes ---
+		existingRoute, err := GetRouteByID(ctx, selectedRouteID)
+		if err != nil {
+			log.Printf("Error getting existing route %s for re-classification: %v", selectedRouteID, err)
+			http.Error(w, "Failed to retrieve existing route", http.StatusInternalServerError)
+			return
+		}
+
+		// Authorization check: ensure user owns this route, or is an admin
+		if existingRoute.SubmittedByUserID != strconv.FormatInt(user.StravaID, 10) && !user.IsAdmin {
+			http.Error(w, "Forbidden: You can only re-classify your own routes", http.StatusForbidden)
+			return
+		}
+
+		existingRoute.Classify = routeClassify // Update classification
+		routeToSave = existingRoute // Use existing route for update
+	} else if stravaRouteSelectID != "" {
+		// --- Scenario 2: User is adding a route from their Strava list ---
+		stravaRouteID, err := strconv.ParseInt(stravaRouteSelectID, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid Strava route ID selected", http.StatusBadRequest)
+			return
+		}
+
+		// Fetch the selected Strava route details using the fresh token
+		accessToken, tokenErr := GetFreshStravaToken(ctx, user)
+		if tokenErr != nil {
+			log.Printf("Error getting fresh Strava token for route fetch: %v", tokenErr)
+			http.Error(w, "Failed to authenticate with Strava API", http.StatusInternalServerError)
+			return
+		}
+		
+		specificRouteURL := fmt.Sprintf("https://www.strava.com/api/v3/routes/%d", stravaRouteID)
+
+		client := stravaOAuthConf.Client(ctx, &oauth2.Token{AccessToken: accessToken})
+		resp, err := client.Get(specificRouteURL)
+		if err != nil {
+			log.Printf("Error fetching specific Strava route %d details: %v", stravaRouteID, err)
+			http.Error(w, "Failed to get route details from Strava API", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			bodyBytes, _ := ioutil.ReadAll(resp.Body)
+			log.Printf("Strava API specific route fetch failed. Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
+			http.Error(w, "Failed to retrieve Strava route details", http.StatusInternalServerError)
+			return
+		}
+
+		var stravaRouteDetail StravaRouteAPI
+		if err := json.NewDecoder(resp.Body).Decode(&stravaRouteDetail); err != nil {
+			log.Printf("Failed to decode specific Strava route details: %v", err)
+			http.Error(w, "Failed to parse Strava route data", http.StatusInternalServerError)
+			return
+		}
+
+		routeToSave = &Route{
+			Name:                stravaRouteDetail.Name,
+			URL:                 fmt.Sprintf("https://www.strava.com/routes/%d", stravaRouteDetail.ID),
+			SubmittedByUserID:   strconv.FormatInt(user.StravaID, 10),
+			SubmittedByUserName: fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+			SubmittedAt:         time.Now(),
+		}
+	} else {
+		// If neither selectedRouteID nor stravaRouteSelectID is present, it's an invalid submission.
+		http.Error(w, "No route selected or invalid submission method", http.StatusBadRequest)
+		return
+	}
+
+	// Apply classification (from dropdown for both new and existing submissions)
+	if routeClassify != "Thursday" && routeClassify != "Saturday" {
+		http.Error(w, "Invalid route classification", http.StatusBadRequest)
+		return
+	}
+	routeToSave.Classify = routeClassify
+
+	// Save or update the route in Firestore
+	if err := CreateRoute(ctx, routeToSave); err != nil {
+		log.Printf("Error creating/updating route in Firestore: %v", err)
+		http.Error(w, "Failed to submit/update route", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Route submitted/updated by %s: %s (Classify: %s, ID: %s)", routeToSave.SubmittedByUserName, routeToSave.Name, routeToSave.Classify, routeToSave.ID)
+
+	// After submission/deletion, re-fetch all routes once and filter for user's routes for HTMX response
+	allRoutes, err := GetAllRoutes(ctx)
+	if err != nil {
+		log.Printf("Error fetching all routes after submission: %v", err)
+		http.Error(w, "Failed to load updated routes list", http.StatusInternalServerError)
+		return
+	}
+
+	filteredUserRoutes := []Route{}
+	loggedInUserIDStr := strconv.FormatInt(user.StravaID, 10)
+	for _, r := range allRoutes {
+		if r.SubmittedByUserID == loggedInUserIDStr {
+			filteredUserRoutes = append(filteredUserRoutes, r)
+		}
+	}
+
+	data := TemplateData{ // Populate data for the fragment
+		IsLoggedIn: true,
+		User:       user,
+		IsAdmin:    user.IsAdmin,
+		Routes:     allRoutes,
+		UserRoutes: filteredUserRoutes,
+		// StravaUserRoutes is only needed for initial routes page load and dynamic search
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	err = tmpl.ExecuteTemplate(w, "routes_list_fragment.html", data)
+	if err != nil {
+		log.Printf("Error executing routes_list_fragment template: %v", err)
+		http.Error(w, "Failed to render updated routes list", http.StatusInternalServerError)
+	}
+}
+
+// deleteRouteHandler handles deletion of a route
+func deleteRouteHandler(w http.ResponseWriter, r *http.Request) {
+	user, isLoggedIn := getUserFromSession(r)
+	if !isLoggedIn {
+		http.Error(w, "Unauthorized: Not logged in", http.StatusUnauthorized)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	routeID := r.FormValue("routeID")
+	if routeID == "" {
+		http.Error(w, "Route ID missing", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	routeToDelete, err := GetRouteByID(ctx, routeID)
+	if err != nil {
+		log.Printf("Error getting route %s for deletion: %v", routeID, err)
+		http.Error(w, "Route not found", http.StatusNotFound)
+		return
+	}
+
+	// Authorization check: User can only delete their own route unless they are admin
+	if routeToDelete.SubmittedByUserID != strconv.FormatInt(user.StravaID, 10) && !user.IsAdmin {
+		http.Error(w, "Forbidden: You can only delete your own routes.", http.StatusForbidden)
+		return
+	}
+
+	if err := DeleteRoute(ctx, routeID); err != nil {
+		log.Printf("Error deleting route %s from Firestore: %v", routeID, err)
+		http.Error(w, "Failed to delete route from database", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Route %s deleted by user %s (Admin: %t).", routeID, user.FirstName, user.IsAdmin)
+
+	// After deletion, re-fetch all routes once and filter for user's routes for HTMX response
+	allRoutes, err := GetAllRoutes(ctx)
+	if err != nil {
+		log.Printf("Error fetching all routes after deletion: %v", err)
+		http.Error(w, "Failed to load updated routes list", http.StatusInternalServerError)
+		return
+	}
+
+	filteredUserRoutes := []Route{}
+	loggedInUserIDStr := strconv.FormatInt(user.StravaID, 10)
+	for _, r := range allRoutes {
+		if r.SubmittedByUserID == loggedInUserIDStr {
+			filteredUserRoutes = append(filteredUserRoutes, r)
+		}
+	}
+
+	data := TemplateData{ // Populate data for the fragment
+		IsLoggedIn: true,
+		User:       user,
+		IsAdmin:    user.IsAdmin,
+		Routes:     allRoutes,
+		UserRoutes: filteredUserRoutes,
+		// StravaUserRoutes is only needed for initial routes page load and dynamic search
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	err = tmpl.ExecuteTemplate(w, "routes_list_fragment.html", data)
+	if err != nil {
+		log.Printf("Error executing routes_list_fragment template: %v", err)
+		http.Error(w, "Failed to render updated routes list", http.StatusInternalServerError)
+	}
 }

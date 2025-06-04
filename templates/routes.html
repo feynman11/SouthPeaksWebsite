@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>South Peaks Cycling Club | Routes</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/htmx.org@1.9.12"
+    integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+    crossorigin="anonymous"></script>
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/static/favicon/site.webmanifest">
+</head>
+
+<body>
+  <!-- Fixed Header Bar - Initially Hidden -->
+  <div id="sticky-header" class="sticky-header">
+    <div class="sticky-content">
+      <img src="/static/spcc_logo.jpg" alt="SPCC Logo" class="sticky-logo" />
+      <nav class="sticky-nav">
+        {{ if .IsLoggedIn }}
+        <a href="/" class="nav-link-small">Home</a>
+        <a href="/members" class="nav-link-small">Members Area</a>
+        {{ if .User.IsPaidMember }}
+        {{/* Removed: <a href="/routes" class="nav-link-small">Routes</a> */}}
+        {{ end }}
+        <a href="/logout" class="nav-link-small logout-link-small">Logout</a>
+        {{ else }}
+        <a href="/login/strava" class="nav-link-small strava-login-button-small">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172" />
+          </svg>
+          Login
+        </a>
+        {{ end }}
+      </nav>
+    </div>
+  </div>
+
+  <div class="container">
+    <header class="hero" id="hero-section">
+      <div class="hero-content">
+        <img src="/static/spcc_logo.jpg" alt="South Peaks Cycling Club Logo" class="club-logo" />
+        <p class="location">{{ .Location }}</p>
+        <p class="tagline">Club Routes</p>
+        <nav class="main-nav">
+          <a href="/" class="nav-link">Home</a>
+          <a href="/members" class="nav-link">Members Area</a>
+          {{ if .User.IsPaidMember }}
+          {{/* Removed: <a href="/routes" class="nav-link">Routes</a> */}}
+          {{ end }}
+          <a href="/logout" class="nav-link logout-link">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section class="routes-page-intro">
+        <h2>Community Routes</h2>
+        <p>Explore routes submitted by club members, classified by typical ride days.</p>
+      </section>
+
+      {{/* All Submitted Routes - TOP SECTION */}}
+      <section class="all-routes-list">
+        <h3>All Submitted Routes</h3>
+        {{ template "routes_list_fragment.html" . }}
+      </section>
+
+      {{ if .IsLoggedIn }}
+      {{/* My Submitted Routes Section - MIDDLE SECTION */}}
+      <section class="my-routes-list">
+        <h3>My Submitted Routes</h3>
+        {{ if .UserRoutes }}
+        <p>Select one of your previously submitted routes to classify/resubmit:</p>
+        <form hx-post="/routes/submit" hx-target="#routes-list-container" hx-swap="outerHTML"
+          hx-indicator="#resubmit-indicator">
+          <div class="form-group">
+            <label for="selectRoute">Choose from my routes:</label>
+            <select id="selectRoute" name="selectedRouteID" required> {{/* ADDED required HERE */}}
+              <option value="">-- Select a route --</option>
+              {{ range .UserRoutes }}
+              <option value="{{ .ID }}">{{ .Name }} ({{ .Classify }})</option>
+              {{ end }}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="resubmitClassify">Classify as:</label>
+            <select id="resubmitClassify" name="routeClassify" required>
+              <option value="">Select a classification</option>
+              <option value="Thursday">Thursday Route</option>
+              <option value="Saturday">Saturday Route</option>
+            </select>
+          </div>
+          <button type="submit" class="submit-route-button">Re-classify/Submit Selected Route</button>
+          <span id="resubmit-indicator" class="htmx-indicator">Resubmitting...</span>
+        </form>
+        <div class="routes-grid my-routes-grid">
+          {{ range .UserRoutes }}
+          <div class="route-card">
+            <h4><a href="{{ .URL }}" target="_blank" rel="noopener noreferrer">{{ .Name }}</a></h4>
+            <p class="route-classification">Class: <span>{{ .Classify }}</span></p>
+            <p class="route-submitter">Submitted by: {{ .SubmittedByUserName }}</p>
+            <p class="route-date">On: {{ .SubmittedAt.Format "Jan 2, 2006" }}</p>
+            <div class="route-actions">
+              <form hx-post="/routes/delete" hx-target="#routes-list-container" hx-swap="outerHTML"
+                hx-confirm="Are you sure you want to delete this route?"
+                hx-indicator="#delete-route-indicator-{{ .ID }}">
+                <input type="hidden" name="routeID" value="{{ .ID }}">
+                <button type="submit" class="delete-route-button">Delete</button>
+                <span id="delete-route-indicator-{{ .ID }}" class="htmx-indicator">Deleting...</span>
+              </form>
+            </div>
+          </div>
+          {{ end }}
+        </div>
+        {{ else }}
+        <p class="no-routes-message">You haven't submitted any routes yet.</p>
+        {{ end }}
+      </section>
+
+      {{/* Add New Route Section - BOTTOM SECTION */}}
+      {{ if .User.IsPaidMember }}
+      <section class="submit-route-form">
+        <h3>Add a New Route</h3>
+        <p>Share your favorite Strava routes with the club!</p>
+
+        {{/* NEW: Dropdown for Strava User Routes */}}
+        {{ if .StravaUserRoutes }}
+        <form hx-post="/routes/submit" hx-target="#routes-list-container" hx-swap="outerHTML"
+          hx-indicator="#strava-route-submit-indicator">
+          <div class="form-group">
+            <label for="stravaRouteSelect">Select from your Strava Routes:</label>
+            <select id="stravaRouteSelect" name="stravaRouteSelect" required> {{/* ADDED required HERE */}}
+              <option value="">-- Select a Strava Route --</option>
+              {{ range .StravaUserRoutes }}
+              <option value="{{ .ID }}">{{ .Name }} ({{ .Distance | printf "%.1f" }}m, {{ .ElevationGain | printf "%.0f"
+                }}m Gain)</option>
+              {{ end }}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="classifySelectedStravaRoute">Classify as:</label>
+            <select id="classifySelectedStravaRoute" name="routeClassify" required>
+              <option value="">Select a classification</option>
+              <option value="Thursday">Thursday Route</option>
+              <option value="Saturday">Saturday Route</option>
+            </select>
+          </div>
+          <button type="submit" class="submit-route-button">Add Selected Strava Route</button>
+          <span id="strava-route-submit-indicator" class="htmx-indicator">Adding from Strava...</span>
+        </form>
+        {{ end }}
+
+      </section>
+      {{ else }}
+      <section class="submit-route-form warning-message-box">
+        <h3>Become a Paid Member to Add Routes</h3>
+        <p>Only paid members can submit new routes to the club's collection.</p>
+        <p>Visit the <a href="/members" class="inline-link">Members Area</a> to update your status.</p>
+      </section>
+      {{ end }}
+      {{ else }}
+      <section class="submit-route-form warning-message-box">
+        <h3>Login to View and Submit Routes</h3>
+        <p>Please <a href="/login/strava" class="inline-link">Login with Strava</a> to access and submit routes.</p>
+      </section>
+      {{ end }}
+
+    </main>
+
+    <footer class="footer">
+      <p>&copy; {{ .CurrentYear }} South Peaks Cycling Club. All rights reserved.</p>
+      <p>{{ .Location }}, UK</p>
+    </footer>
+  </div>
+
+  <script src="/static/js/sticky-header.js"></script>
+</body>
+
+</html>

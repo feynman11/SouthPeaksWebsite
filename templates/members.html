@@ -1,125 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>South Peaks Cycling Club | Members</title>
-    <link rel="stylesheet" href="/static/style.css" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <script
-      src="https://unpkg.com/htmx.org@1.9.12"
-      integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
-      crossorigin="anonymous"
-    ></script>
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
-    <link rel="manifest" href="/static/favicon/site.webmanifest">
-  </head>
-  <body>
-    <!-- Fixed Header Bar - Initially Hidden -->
-    <div id="sticky-header" class="sticky-header">
-      <div class="sticky-content">
-        <img src="/static/spcc_logo.jpg" alt="SPCC Logo" class="sticky-logo" />
-        <nav class="sticky-nav">
-          {{ if .IsLoggedIn }}
-            <a href="/" class="nav-link-small">Home</a>
-            <a href="/logout" class="nav-link-small logout-link-small">Logout</a>
-          {{ else }}
-            <a href="/login/strava" class="nav-link-small strava-login-button-small">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172"/>
-              </svg>
-              Login
-            </a>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>South Peaks Cycling Club | Members</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/htmx.org@1.9.12"
+    integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+    crossorigin="anonymous"></script>
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/static/favicon/site.webmanifest">
+</head>
+
+<body>
+  <!-- Fixed Header Bar - Initially Hidden -->
+  <div id="sticky-header" class="sticky-header">
+    <div class="sticky-content">
+      <img src="/static/spcc_logo.jpg" alt="SPCC Logo" class="sticky-logo" />
+      <nav class="sticky-nav">
+        {{ if .IsLoggedIn }}
+        <a href="/" class="nav-link-small">Home</a>
+        {{ if .User.IsPaidMember }} {{/* Show Routes link only for paid members */}}
+        <a href="/routes" class="nav-link-small">Routes</a>
+        {{ end }}
+        <a href="/logout" class="nav-link-small logout-link-small">Logout</a>
+        {{ else }}
+        <a href="/login/strava" class="nav-link-small strava-login-button-small">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172" />
+          </svg>
+          Login
+        </a>
+        {{ end }}
+      </nav>
+    </div>
+  </div>
+
+
+  <div class="container">
+    <header class="hero" id="hero-section">
+      <div class="hero-content">
+        <img src="/static/spcc_logo.jpg" alt="South Peaks Cycling Club Logo" class="club-logo" />
+        <p class="location">{{ .Location }}</p>
+        <p class="tagline">Welcome, {{ .User.FirstName }}!</p>
+        <nav class="main-nav">
+          <a href="/" class="nav-link">Home</a>
+          {{ if .User.IsPaidMember }} {{/* Show Routes link only for paid members */}}
+          <a href="/routes" class="nav-link">Routes</a>
           {{ end }}
+          <a href="/logout" class="nav-link logout-link">Logout</a>
         </nav>
       </div>
-    </div>
+    </header>
 
-
-    <div class="container">
-      <header class="hero" id="hero-section">
-        <div class="hero-content">
-          <img
-            src="/static/spcc_logo.jpg"
-            alt="South Peaks Cycling Club Logo"
-            class="club-logo"
-          />
-          <p class="location">{{ .Location }}</p>
-          <p class="tagline">Welcome, {{ .User.FirstName }}!</p>
-          <nav class="main-nav">
-            <a href="/" class="nav-link">Home</a>
-            {{/* Removed: <a href="/members" class="nav-link">Members Area</a> */}}
-            <a href="/logout" class="nav-link logout-link">Logout</a>
-          </nav>
-        </div>
-      </header>
-
-      <main class="main-content">
-        <section class="members-list">
-          <h2>Club Members</h2>
-          {{ if .IsAdmin }}
-          <p class="admin-note">
-            (You are an admin. You can toggle paid status below.)
-          </p>
-          {{ end }}
-
-          {{ template "members_grid_fragment.html" . }}
-
-        </section>
-
-        {{ if .IsLoggedIn }}
-          {{ if not .User.IsPaidMember }}
-          <section class="payment-prompt">
-            <h3>Your Membership Subs</h3>
-            <p class="payment-message">
-              It looks like your membership is currently unpaid. Please help us
-              keep the club running by paying your 2025 subs!
-            </p>
-            <a
-              href="https://monzo.me/danswain1/16.00?h=LxxC32&d=SPCC%202025%20Membership%20Subs"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="monzo-pay-button"
-            >
-              Pay SPCC 2025 Subs via Monzo.me (£16.00)
-            </a>
-            <p class="payment-note">
-              Once paid, your status will be updated by an admin. Thank you!
-            </p>
-          </section>
-          {{ end }}
-
-          <section class="account-management-section">
-            <h3>Account Management</h3>
-            <p class="warning-message">
-              This action is irreversible. Deleting your account will remove all
-              your data from our member records.
-            </p>
-            <button
-              hx-post="/members/delete-account"
-              hx-confirm="Are you absolutely sure you want to delete your account? This cannot be undone."
-              class="delete-account-button"
-            >
-              Delete My Account
-            </button>
-          </section>
-
+    <main class="main-content">
+      <section class="members-list">
+        <h2>Club Members</h2>
+        {{ if .IsAdmin }}
+        <p class="admin-note">
+          (You are an admin. You can toggle paid status below.)
+        </p>
         {{ end }}
 
-      </main>
+        {{ template "members_grid_fragment.html" . }}
 
-      <footer class="footer">
-        <p>&copy; {{ .CurrentYear }} South Peaks Cycling Club. All rights reserved.</p>
-        <p>{{ .Location }}, UK</p>
-      </footer>
-    </div>
+      </section>
 
-    <!-- Link to external JavaScript file -->
-    <script src="/static/js/sticky-header.js"></script>
-  </body>
+      {{ if .IsLoggedIn }}
+      {{ if not .User.IsPaidMember }}
+      <section class="payment-prompt">
+        <h3>Your Membership Subs</h3>
+        <p class="payment-message">
+          It looks like your membership is currently unpaid. Please help us
+          keep the club running by paying your 2025 subs!
+        </p>
+        <a href="https://monzo.me/danswain1/16.00?h=LxxC32&d=SPCC%202025%20Membership%20Subs" target="_blank"
+          rel="noopener noreferrer" class="monzo-pay-button">
+          Pay SPCC 2025 Subs via Monzo.me (£16.00)
+        </a>
+        <p class="payment-note">
+          Once paid, your status will be updated by an admin. Thank you!
+        </p>
+      </section>
+      {{ end }}
+
+      <section class="account-management-section">
+        <h3>Account Management</h3>
+        <p class="warning-message">
+          This action is irreversible. Deleting your account will remove all
+          your data from our member records.
+        </p>
+        <button hx-post="/members/delete-account"
+          hx-confirm="Are you absolutely sure you want to delete your account? This cannot be undone."
+          class="delete-account-button">
+          Delete My Account
+        </button>
+      </section>
+
+      {{ end }}
+
+    </main>
+
+    <footer class="footer">
+      <p>&copy; {{ .CurrentYear }} South Peaks Cycling Club. All rights reserved.</p>
+      <p>{{ .Location }}, UK</p>
+    </footer>
+  </div>
+
+  <!-- Link to external JavaScript file -->
+  <script src="/static/js/sticky-header.js"></script>
+</body>
+
 </html>

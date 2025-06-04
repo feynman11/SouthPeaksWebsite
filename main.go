@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -14,24 +16,15 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// --- Configuration Constants (Move to environment variables in production!) ---
+// --- Configuration Constants ---
 var (
 	stravaClientID     = os.Getenv("STRAVA_CLIENT_ID")
 	stravaClientSecret = os.Getenv("STRAVA_CLIENT_SECRET")
-	sessionSecretKey   = os.Getenv("SESSION_SECRET_KEY") // A long, random string
-	// IMPORTANT: Set this to your app's actual URL for OAuth callback!
-	// For local: http://localhost:8080
-	// For Cloud Run/App Engine: https://your-custom-domain.com or https://your-app-id.run.app
-	oauthCallbackURL = os.Getenv("OAUTH_CALLBACK_URL")
+	sessionSecretKey   = os.Getenv("SESSION_SECRET_KEY")
+	oauthCallbackURL   = os.Getenv("OAUTH_CALLBACK_URL") // e.g., "https://www.southpeakscc.co.uk" or "http://localhost:8081"
 
-	// Store for sessions (e.g., cookie store)
-	// For production, consider using a secure, distributed store like Firestore or Memorystore
 	store = sessions.NewCookieStore([]byte(sessionSecretKey))
-
-	// OAuth2 configuration for Strava
 	stravaOAuthConf *oauth2.Config
-
-	// Firestore client
 	firestoreClient *firestore.Client
 )
 
@@ -41,11 +34,13 @@ type TemplateData struct {
 	StravaURL    string
 	InstagramURL string
 	CurrentYear  int
-	// Add user-specific data for templates
 	IsLoggedIn bool
-	User       *User // User info from session
+	User       *User
 	IsAdmin    bool
-	Members    []User // For the members page
+	Members    []User    // For members page (all members)
+	Routes     []Route   // For routes page (all club routes)
+	UserRoutes []Route   // For routes page (user's own submitted routes)
+	StravaUserRoutes []StravaRouteAPI
 }
 
 var tmpl *template.Template
@@ -55,13 +50,12 @@ func main() {
 	if stravaClientID == "" || stravaClientSecret == "" || sessionSecretKey == "" || oauthCallbackURL == "" {
 		log.Fatal("Missing environment variables: STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, SESSION_SECRET_KEY, OAUTH_CALLBACK_URL")
 	}
-	tmpl = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
 
 	stravaOAuthConf = &oauth2.Config{
 		ClientID:     stravaClientID,
 		ClientSecret: stravaClientSecret,
 		RedirectURL:  oauthCallbackURL + "/auth/strava/callback",
-		Scopes:       []string{"read_all"}, // Request read_all access to Strava data
+		Scopes:       []string{"read_all"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://www.strava.com/oauth/authorize",
 			TokenURL: "https://www.strava.com/oauth/token",
@@ -70,35 +64,46 @@ func main() {
 
 	// Initialize Firestore
 	ctx := context.Background()
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT") // App Engine/Cloud Run sets this
+	var err error
+
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if projectID == "" {
-		// Fallback for local development if GOOGLE_CLOUD_PROJECT not set
-		log.Println("GOOGLE_CLOUD_PROJECT not set, attempting default Firestore client")
-		firestoreClient, _ = firestore.NewClient(ctx, "southpeakswebsite") // Replace with your actual project ID for local testing
-	} else {
-		var err error
-		firestoreClient, err = firestore.NewClient(ctx, projectID)
-		if err != nil {
-			log.Fatalf("Failed to create Firestore client: %v", err)
-		}
+		log.Println("GOOGLE_CLOUD_PROJECT not set. Using default client for local testing. Remember to set your actual project ID if not using emulator.")
+		projectID = "southpeakswebsite" // <-- REPLACE WITH YOUR ACTUAL GOOGLE CLOUD PROJECT ID for local non-emulator testing
 	}
-	defer firestoreClient.Close()
 
-	// Parse templates
-	tmpl = template.Must(template.ParseGlob(filepath.Join("templates", "*.html"))) // Parse all HTML files in templates
+	log.Printf("Connecting to cloud Firestore project %s, database %s", projectID)
+	// Use firestore.WithDatabase for your named database in the cloud
+	firestoreClient, err = firestore.NewClient(ctx, projectID)
 
-	// Serve static files (CSS, Images, etc.)
+	if err != nil {
+		log.Fatalf("Failed to create Firestore client: %v", err)
+	}
+	defer func() {
+		log.Println("Closing Firestore client...")
+		if clientErr := firestoreClient.Close(); clientErr != nil {
+			log.Printf("Error closing Firestore client: %v", clientErr)
+		}
+	}()
+
+	// Parse templates - will parse all HTML files in templates directory
+	tmpl = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
+
+	mux := http.NewServeMux() // Use a new ServeMux for better control
 	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// --- Routes ---
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/login/strava", stravaLoginHandler)
-	http.HandleFunc("/auth/strava/callback", stravaCallbackHandler)
-	http.HandleFunc("/logout", logoutHandler)
-	http.HandleFunc("/members", membersHandler) // New members page
-	http.HandleFunc("/admin/toggle-paid", adminTogglePaidHandler) // Admin action
-	http.HandleFunc("/members/delete-account", deleteAccountHandler)
+	mux.HandleFunc("/", indexHandler)
+	mux.HandleFunc("/login/strava", stravaLoginHandler)
+	mux.HandleFunc("/auth/strava/callback", stravaCallbackHandler)
+	mux.HandleFunc("/logout", logoutHandler)
+	mux.HandleFunc("/members", membersHandler)
+	mux.HandleFunc("/admin/toggle-paid", adminTogglePaidHandler)
+	mux.HandleFunc("/members/delete-account", deleteAccountHandler)
+	mux.HandleFunc("/routes", routesHandler)
+	mux.HandleFunc("/routes/submit", submitRouteHandler)
+	mux.HandleFunc("/routes/delete", deleteRouteHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -106,10 +111,36 @@ func main() {
 		log.Printf("Defaulting to port %s", port)
 	}
 
-	log.Printf("Listening on port %s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal(err)
+	// --- Graceful Shutdown Setup ---
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux, // Use our custom ServeMux
 	}
+
+	// Create a channel to listen for OS signals
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	// Goroutine to start the server
+	go func() {
+		log.Printf("Listening on port %s", port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Could not listen on %s: %v", port, err)
+		}
+	}()
+
+	// Block until we receive a signal
+	<-stop
+
+	// Create a deadline for the shutdown
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	log.Println("Shutting down server...")
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("Server shutdown failed: %v", err)
+	}
+	log.Println("Server exited gracefully")
 }
 
 // Global variable for current user data (fetched from session middleware)
@@ -120,7 +151,7 @@ var currentIsAdmin bool
 
 // getUserFromSession is a middleware-like function to populate currentAuthUser
 func getUserFromSession(r *http.Request) (*User, bool) {
-	session, err := store.Get(r, "session-name") // "session-name" is arbitrary
+	session, err := store.Get(r, "session-name")
 	if err != nil {
 		log.Printf("Error getting session: %v", err)
 		return nil, false
@@ -130,7 +161,7 @@ func getUserFromSession(r *http.Request) (*User, bool) {
 	if userIDVal == nil {
 		return nil, false
 	}
-	userID := userIDVal.(int64) // Strava Athlete ID is int64
+	userID := userIDVal.(int64)
 
 	ctx := r.Context()
 	user, err := GetUserByID(ctx, userID)
@@ -138,7 +169,7 @@ func getUserFromSession(r *http.Request) (*User, bool) {
 		log.Printf("Error getting user from Firestore by ID %d: %v", userID, err)
 		return nil, false
 	}
-	currentAuthUser = user // Set global for template access (see note above)
+	currentAuthUser = user
 	currentIsAdmin = user.IsAdmin
 	return user, true
 }
@@ -149,7 +180,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, isLoggedIn := getUserFromSession(r) // Try to get user from session
+	user, isLoggedIn := getUserFromSession(r)
 
 	data := TemplateData{
 		Location:     "Borrowash, Derbyshire",
@@ -158,7 +189,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		CurrentYear:  time.Now().Year(),
 		IsLoggedIn:   isLoggedIn,
 		User:         user,
-		IsAdmin:      currentIsAdmin, // Assuming currentIsAdmin is set by getUserFromSession
+		IsAdmin:      currentIsAdmin,
 	}
 
 	err := tmpl.ExecuteTemplate(w, "index.html", data)
