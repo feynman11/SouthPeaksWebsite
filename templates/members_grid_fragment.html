@@ -1,0 +1,33 @@
+{{/* templates/members_grid_fragment.html */}}
+
+<div class="members-grid" id="members-grid">
+  {{ range .Members }}
+  <div class="member-card">
+    <img
+      src="{{ .ProfilePicURL }}"
+      alt="{{ .FirstName }} {{ .LastName }}"
+      class="member-pic"
+    />
+    <h4>{{ .FirstName }} {{ .LastName }}</h4>
+    <p>
+      Status:
+      {{ if .IsPaidMember }}
+      <span class="paid-status paid">Paid Member</span>
+      {{ else }}
+      <span class="paid-status unpaid">Unpaid Member</span>
+      {{ end }}
+    </p>
+
+    {{ if $.IsAdmin }} {{/* $.IsAdmin refers to the admin status of the currently logged-in user */}}
+    <form hx-post="/admin/toggle-paid" hx-target="#members-grid" hx-swap="outerHTML">
+      <input type="hidden" name="userID" value="{{ .StravaID }}" />
+      <button type="submit" class="toggle-paid-button">
+        Toggle Paid Status
+      </button>
+    </form>
+    {{ end }}
+  </div>
+  {{ else }}
+  <p>No members found.</p>
+  {{ end }}
+</div>

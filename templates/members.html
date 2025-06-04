@@ -19,16 +19,15 @@
     <link rel="apple-touch-icon" href="/static/favicon.png" />
   </head>
   <body>
-    <!-- Fixed Header Bar - Initially Hidden (Copied from index.html) -->
+    <!-- Fixed Header Bar - Initially Hidden -->
     <div id="sticky-header" class="sticky-header">
       <div class="sticky-content">
         <img src="/static/spcc_logo.jpg" alt="SPCC Logo" class="sticky-logo" />
         <nav class="sticky-nav">
           {{ if .IsLoggedIn }}
             <a href="/" class="nav-link-small">Home</a>
-            <a href="/members" class="nav-link-small">Members Area</a>
             <a href="/logout" class="nav-link-small logout-link-small">Logout</a>
-          {{ else }} {{/* This else block is technically not needed here as members page requires login, but kept for consistency */}}
+          {{ else }}
             <a href="/login/strava" class="nav-link-small strava-login-button-small">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172"/>
@@ -42,7 +41,7 @@
 
 
     <div class="container">
-      <header class="hero" id="hero-section"> {{/* Added ID to hero section */}}
+      <header class="hero" id="hero-section">
         <div class="hero-content">
           <img
             src="/static/spcc_logo.jpg"
@@ -53,6 +52,7 @@
           <p class="tagline">Welcome, {{ .User.FirstName }}!</p>
           <nav class="main-nav">
             <a href="/" class="nav-link">Home</a>
+            <a href="/members" class="nav-link">Members Area</a>
             <a href="/logout" class="nav-link logout-link">Logout</a>
           </nav>
         </div>
@@ -67,38 +67,33 @@
           </p>
           {{ end }}
 
-          <div class="members-grid" id="members-grid">
-            {{ range .Members }}
-            <div class="member-card">
-              <img
-                src="{{ .ProfilePicURL }}"
-                alt="{{ .FirstName }} {{ .LastName }}"
-                class="member-pic"
-              />
-              <h4>{{ .FirstName }} {{ .LastName }}</h4>
-              <p>
-                Status:
-                {{ if .IsPaidMember }}
-                <span class="paid-status paid">Paid Member</span>
-                {{ else }}
-                <span class="paid-status unpaid">Unpaid Member</span>
-                {{ end }}
-              </p>
+          {{ template "members_grid_fragment.html" . }} {{/* NEW: Include the fragment */}}
 
-              {{ if $.IsAdmin }}
-              <form hx-post="/admin/toggle-paid" hx-target="#members-grid" hx-swap="outerHTML">
-                <input type="hidden" name="userID" value="{{ .StravaID }}" />
-                <button type="submit" class="toggle-paid-button">
-                  Toggle Paid Status
-                </button>
-              </form>
-              {{ end }}
-            </div>
-            {{ else }}
-            <p>No members found.</p>
-            {{ end }}
-          </div>
         </section>
+
+        {{ if .IsLoggedIn }}
+          {{ if not .User.IsPaidMember }}
+          <section class="payment-prompt">
+            <h3>Your Membership Subs</h3>
+            <p class="payment-message">
+              It looks like your membership is currently unpaid. Please help us
+              keep the club running by paying your 2025 subs!
+            </p>
+            <a
+              href="https://monzo.me/danswain1/16.00?h=LxxC32&d=SPCC%202025%20Membership%20Subs"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="monzo-pay-button"
+            >
+              Pay SPCC 2025 Subs via Monzo.me (£16.00)
+            </a>
+            <p class="payment-note">
+              Once paid, your status will be updated by an admin. Thank you!
+            </p>
+          </section>
+          {{ end }}
+        {{ end }}
+
       </main>
 
       <footer class="footer">
@@ -110,4 +105,4 @@
     <!-- Link to external JavaScript file -->
     <script src="/static/js/sticky-header.js"></script>
   </body>
-</html> 
+</html>

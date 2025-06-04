@@ -216,9 +216,26 @@ func adminTogglePaidHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// --- THIS IS THE CRITICAL PART ---
-	w.Header().Set("HX-Redirect", "/members")
-	w.WriteHeader(http.StatusOK) // Use 200 OK or 204 No Content for HTMX headers
-	// Do NOT write anything to the body here, and return immediately.
-	return
+	// --- NEW: Fetch all members again to re-render the list ---
+	members, err := GetAllUsers(ctx) // Re-fetch data after update
+	if err != nil {
+		log.Printf("Error fetching all members after toggle: %v", err)
+		http.Error(w, "Failed to re-load members list", http.StatusInternalServerError)
+		return
+	}
+
+	data := TemplateData{ // Populate data for the fragment
+		IsAdmin: user.IsAdmin, // Ensure admin status is passed to the fragment
+		Members: members,
+	}
+
+	// --- NEW: Render only the members_grid_fragment.html template ---
+	// Set Content-Type header to tell HTMX it's HTML
+	w.Header().Set("Content-Type", "text/html")
+	err = tmpl.ExecuteTemplate(w, "members_grid_fragment.html", data) // Render the fragment
+	if err != nil {
+		log.Printf("Error executing members_grid_fragment template: %v", err)
+		http.Error(w, "Failed to render updated list", http.StatusInternalServerError)
+	}
+	// No explicit return needed if ExecuteTemplate completes successfully, as it's the last action.
 }

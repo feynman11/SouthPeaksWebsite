@@ -56,6 +56,7 @@ func main() {
 	if stravaClientID == "" || stravaClientSecret == "" || sessionSecretKey == "" || oauthCallbackURL == "" {
 		log.Fatal("Missing environment variables: STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, SESSION_SECRET_KEY, OAUTH_CALLBACK_URL")
 	}
+	tmpl = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
 
 	stravaOAuthConf = &oauth2.Config{
 		ClientID:     stravaClientID,

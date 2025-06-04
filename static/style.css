@@ -39,8 +39,8 @@ body {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(10px);
   border-radius: 20px;
-  /* --- REDUCED PADDING HERE --- */
-  padding: 2rem 1.5rem; /* Reduced from 3rem 2rem */
+  /* Reduced padding here */
+  padding: 2rem 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex; /* Added for navigation alignment */
   flex-direction: column; /* Added for navigation alignment */
@@ -48,8 +48,8 @@ body {
 }
 
 .club-logo {
-  /* --- REDUCED MAX-WIDTH HERE --- */
-  max-width: 40%; /* Reduced from 60%. Adjust as needed. */
+  /* Reduced max-width here */
+  max-width: 40%; /* Adjust as needed. */
   height: auto; /* Maintain aspect ratio */
   margin-bottom: 0.8rem; /* Slightly reduced margin below logo */
   display: block; /* Treat the image as a block element for centering */
@@ -402,7 +402,7 @@ body {
 }
 
 
-/* Members Page Specific Styles (included for completeness) */
+/* Members Page Specific Styles */
 .members-list {
   text-align: center;
   margin-bottom: 3rem;
@@ -492,6 +492,63 @@ body {
   background-color: #0056b3;
 }
 
+/* Styles for the Payment Prompt Section on Members Page */
+.payment-prompt {
+  background-color: #f0f8ff; /* Light blue background to make it stand out */
+  border: 1px solid #cce5ff;
+  border-left: 5px solid #007bff; /* Blue accent border */
+  border-radius: 10px;
+  padding: 2.5rem;
+  margin-top: 3rem; /* Space above this section */
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.payment-prompt h3 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #007bff; /* Primary blue heading */
+  margin-bottom: 1.5rem;
+}
+
+.payment-message {
+  font-size: 1.1rem;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 1.8rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.monzo-pay-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.2rem 2.5rem;
+  background-color: #ff6e00; /* Monzo's orange-pink color */
+  color: white;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1.5rem;
+}
+
+.monzo-pay-button:hover {
+  background-color: #e66200; /* Darker Monzo orange on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.payment-note {
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+}
+
 
 /* Footer */
 .footer {
@@ -513,13 +570,13 @@ body {
   }
 
   .hero-content {
-    /* --- REDUCED PADDING FOR SMALLER SCREENS --- */
-    padding: 1.5rem 1rem; /* Reduced from 2rem 1rem */
+    /* Reduced padding for smaller screens */
+    padding: 1.5rem 1rem;
   }
 
   .club-logo {
     /* Adjust percentage on smaller screens */
-    max-width: 50%; /* Adjusted for smaller screens too */
+    max-width: 50%;
   }
 
   .main-nav {
@@ -559,12 +616,20 @@ body {
   .members-grid {
     grid-template-columns: 1fr; /* Stack members vertically on small screens */
   }
+
+  .payment-prompt {
+    padding: 1.5rem; /* Smaller padding on small screens */
+  }
+  .monzo-pay-button {
+    font-size: 1rem;
+    padding: 1rem 1.8rem;
+  }
 }
 
 @media (max-width: 480px) {
   .club-logo {
     /* Adjust percentage on very small screens */
-    max-width: 60%; /* Adjusted for very small screens too */
+    max-width: 60%;
   }
   .main-nav {
     gap: 0.5rem;
