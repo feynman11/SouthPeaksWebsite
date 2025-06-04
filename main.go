@@ -38,7 +38,6 @@ var (
 // TemplateData holds data to be passed to HTML templates
 type TemplateData struct {
 	Location     string
-	Tagline      string
 	StravaURL    string
 	InstagramURL string
 	CurrentYear  int
@@ -99,6 +98,7 @@ func main() {
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/members", membersHandler) // New members page
 	http.HandleFunc("/admin/toggle-paid", adminTogglePaidHandler) // Admin action
+	http.HandleFunc("/members/delete-account", deleteAccountHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -153,7 +153,6 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := TemplateData{
 		Location:     "Borrowash, Derbyshire",
-		Tagline:      "Ride Together, Grow Together",
 		StravaURL:    "https://www.strava.com/clubs/451869",
 		InstagramURL: "https://www.instagram.com/southpeakscc",
 		CurrentYear:  time.Now().Year(),

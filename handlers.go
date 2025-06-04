@@ -165,7 +165,6 @@ func membersHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := TemplateData{
 		Location:    "Borrowash, Derbyshire",
-		Tagline:     "Ride Together, Grow Together",
 		CurrentYear: time.Now().Year(),
 		IsLoggedIn:  true,
 		User:        user,
@@ -238,4 +237,45 @@ func adminTogglePaidHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to render updated list", http.StatusInternalServerError)
 	}
 	// No explicit return needed if ExecuteTemplate completes successfully, as it's the last action.
+}
+
+// deleteAccountHandler allows users to delete their account
+func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		log.Printf("Error getting session for delete: %v", err)
+		http.Error(w, "Session error", http.StatusInternalServerError)
+		return
+	}
+
+	// Must be logged in
+	userIDVal := session.Values["userID"]
+	if userIDVal == nil {
+		http.Error(w, "Not logged in", http.StatusUnauthorized)
+		return
+	}
+	userID := userIDVal.(int64)
+
+	ctx := r.Context()
+
+	// 1. Delete user from Firestore
+	if err := DeleteUser(ctx, userID); err != nil {
+		log.Printf("Error deleting user %d from Firestore: %v", userID, err)
+		http.Error(w, "Failed to delete account from database", http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Clear user session
+	session.Values["userID"] = nil // Clear user ID
+	session.Options.MaxAge = -1    // Immediately expire the cookie
+	if err := session.Save(r, w); err != nil {
+		log.Printf("Error saving session after delete: %v", err)
+		// Try to continue redirecting even if session save fails, as account is deleted
+	}
+
+	log.Printf("Account for Strava ID %d deleted successfully.", userID)
+
+	w.Header().Set("HX-Redirect", "/") // Tell HTMX to redirect the browser to the home page
+	w.WriteHeader(http.StatusOK)       // Send a 200 OK or 204 No Content
+	return
 }

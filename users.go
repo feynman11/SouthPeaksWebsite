@@ -17,11 +17,11 @@ type User struct {
 	LastName       string    `firestore:"lastName"`
 	ProfilePicURL  string    `firestore:"profilePicURL"`
 	IsPaidMember   bool      `firestore:"isPaidMember"`
-	IsAdmin        bool      `firestore:"isAdmin"`        // New field for admin status
+	IsAdmin        bool      `firestore:"isAdmin"`
 	LastLogin      time.Time `firestore:"lastLogin"`
-	AccessToken    string    `firestore:"accessToken"`    // Store for refreshing tokens
-	RefreshToken   string    `firestore:"refreshToken"`   // Store for refreshing tokens
-	AccessTokenExp time.Time `firestore:"accessTokenExp"` // When access token expires
+	AccessToken    string    `firestore:"accessToken"`
+	RefreshToken   string    `firestore:"refreshToken"`
+	AccessTokenExp time.Time `firestore:"accessTokenExp"`
 }
 
 const usersCollection = "users" // Firestore collection name
@@ -57,7 +57,7 @@ func CreateUser(ctx context.Context, user *User) error {
 // UpdateUser updates an existing user document in Firestore
 func UpdateUser(ctx context.Context, user *User) error {
 	docRef := firestoreClient.Collection(usersCollection).Doc(fmt.Sprintf("%d", user.StravaID))
-	_, err := docRef.Set(ctx, user) // Set with merge=false replaces, but Set with struct usually updates all fields
+	_, err := docRef.Set(ctx, user)
 	if err != nil {
 		return fmt.Errorf("failed to update user document: %w", err)
 	}
@@ -84,4 +84,14 @@ func GetAllUsers(ctx context.Context) ([]User, error) {
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+// DeleteUser deletes a user document from Firestore
+func DeleteUser(ctx context.Context, stravaID int64) error {
+	docRef := firestoreClient.Collection(usersCollection).Doc(fmt.Sprintf("%d", stravaID))
+	_, err := docRef.Delete(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete user document with ID %d: %w", stravaID, err)
+	}
+	return nil
 }

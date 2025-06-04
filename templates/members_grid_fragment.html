@@ -1,33 +1,79 @@
 {{/* templates/members_grid_fragment.html */}}
 
-<div class="members-grid" id="members-grid">
-  {{ range .Members }}
-  <div class="member-card">
-    <img
-      src="{{ .ProfilePicURL }}"
-      alt="{{ .FirstName }} {{ .LastName }}"
-      class="member-pic"
-    />
-    <h4>{{ .FirstName }} {{ .LastName }}</h4>
-    <p>
-      Status:
-      {{ if .IsPaidMember }}
-      <span class="paid-status paid">Paid Member</span>
-      {{ else }}
-      <span class="paid-status unpaid">Unpaid Member</span>
-      {{ end }}
-    </p>
+<div class="members-grid-container" id="members-grid-container">
 
-    {{ if $.IsAdmin }} {{/* $.IsAdmin refers to the admin status of the currently logged-in user */}}
-    <form hx-post="/admin/toggle-paid" hx-target="#members-grid" hx-swap="outerHTML">
-      <input type="hidden" name="userID" value="{{ .StravaID }}" />
-      <button type="submit" class="toggle-paid-button">
-        Toggle Paid Status
-      </button>
-    </form>
+  <h3>Paid Members</h3>
+  <div class="members-grid paid-members-grid" id="paid-members-grid">
+    {{ $foundPaid := false }}
+    {{ range .Members }}
+      {{ if .IsPaidMember }}
+        {{ $foundPaid = true }}
+        <div class="member-card">
+          <img
+            src="{{ .ProfilePicURL }}"
+            alt="{{ .FirstName }} {{ .LastName }}"
+            class="member-pic"
+          />
+          <h4>{{ .FirstName }} {{ .LastName }}</h4>
+          {{/* REMOVED STATUS LINE:
+          <p>
+            Status:
+            <span class="paid-status paid">Paid Member</span>
+          </p>
+          */}}
+
+          {{ if $.IsAdmin }}
+          <form hx-post="/admin/toggle-paid" hx-target="#members-grid-container" hx-swap="outerHTML">
+            <input type="hidden" name="userID" value="{{ .StravaID }}" />
+            <button type="submit" class="toggle-paid-button">
+              Toggle Paid Status
+            </button>
+          </form>
+          {{ end }}
+        </div>
+      {{ end }}
+    {{ else }}
+    {{ end }}
+    {{ if not $foundPaid }}
+      <p class="no-members-message">No paid members to display yet.</p>
     {{ end }}
   </div>
-  {{ else }}
-  <p>No members found.</p>
-  {{ end }}
+
+  <h3 class="unpaid-heading">Unpaid Members</h3>
+  <div class="members-grid unpaid-members-grid" id="unpaid-members-grid">
+    {{ $foundUnpaid := false }}
+    {{ range .Members }}
+      {{ if not .IsPaidMember }}
+        {{ $foundUnpaid = true }}
+        <div class="member-card">
+          <img
+            src="{{ .ProfilePicURL }}"
+            alt="{{ .FirstName }} {{ .LastName }}"
+            class="member-pic"
+          />
+          <h4>{{ .FirstName }} {{ .LastName }}</h4>
+          {{/* REMOVED STATUS LINE:
+          <p>
+            Status:
+            <span class="paid-status unpaid">Unpaid Member</span>
+          </p>
+          */}}
+
+          {{ if $.IsAdmin }}
+          <form hx-post="/admin/toggle-paid" hx-target="#members-grid-container" hx-swap="outerHTML">
+            <input type="hidden" name="userID" value="{{ .StravaID }}" />
+            <button type="submit" class="toggle-paid-button">
+              Toggle Paid Status
+            </button>
+          </form>
+          {{ end }}
+        </div>
+      {{ end }}
+    {{ else }}
+    {{ end }}
+    {{ if not $foundUnpaid }}
+      <p class="no-members-message">All members are currently paid!</p>
+    {{ end }}
+  </div>
+
 </div>

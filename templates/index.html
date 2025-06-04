@@ -1,162 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      South Peaks Cycling Club | {{ .Location }}
-    </title>
-    <!-- Favicon links -->
-    <link rel="icon" type="image/png" href="/static/favicon.png" />
-    <link rel="shortcut icon" type="image/png" href="/static/favicon.png" />
-    <link rel="apple-touch-icon" href="/static/favicon.png" />
-    <!-- Link to CSS served by Go -->
-    <link rel="stylesheet" href="/static/style.css" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <!-- HTMX Library -->
-    <script
-      src="https://unpkg.com/htmx.org@1.9.12"
-      integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
-      crossorigin="anonymous"
-    ></script>
-  </head>
-  <body>
-    <!-- Fixed Header Bar - Initially Hidden -->
-    <div id="sticky-header" class="sticky-header">
-      <div class="sticky-content">
-        <img src="/static/spcc_logo.jpg" alt="SPCC Logo" class="sticky-logo" />
-        <nav class="sticky-nav">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>
+    South Peaks Cycling Club | {{ .Location }}
+  </title>
+  <!-- Favicon links -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/static/favicon/site.webmanifest">
+  <!-- Link to CSS served by Go -->
+  <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <!-- HTMX Library -->
+  <script src="https://unpkg.com/htmx.org@1.9.12"
+    integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <!-- Fixed Header Bar - Initially Hidden -->
+  <div id="sticky-header" class="sticky-header">
+    <div class="sticky-content">
+      <img src="/static/spcc_logo.jpg" alt="SPCC Logo" class="sticky-logo" />
+      <nav class="sticky-nav">
+        {{ if .IsLoggedIn }}
+        <a href="/members" class="nav-link-small">Members Area</a>
+        <a href="/logout" class="nav-link-small logout-link-small">Logout</a>
+        {{ else }}
+        <a href="/login/strava" class="nav-link-small strava-login-button-small">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172" />
+          </svg>
+          Login
+        </a>
+        {{ end }}
+      </nav>
+    </div>
+  </div>
+
+
+  <div class="container">
+    <header class="hero" id="hero-section">
+      <div class="hero-content">
+        <img src="/static/spcc_logo.jpg" alt="South Peaks Cycling Club Logo" class="club-logo" />
+        <p class="location">{{ .Location }}</p>
+
+        <nav class="main-nav">
           {{ if .IsLoggedIn }}
-            <a href="/members" class="nav-link-small">Members Area</a>
-            <a href="/logout" class="nav-link-small logout-link-small">Logout</a>
+          <p class="welcome-message">Welcome, {{ .User.FirstName }}!</p>
+          <a href="/members" class="nav-link">Members Area</a>
+          <a href="/logout" class="nav-link logout-link">Logout</a>
           {{ else }}
-            <a href="/login/strava" class="nav-link-small strava-login-button-small">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172"/>
-              </svg>
-              Login
-            </a>
+          <a href="/login/strava" class="nav-link strava-login-button">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172" />
+            </svg>
+            Login with Strava
+          </a>
           {{ end }}
         </nav>
       </div>
-    </div>
+    </header>
 
+    <main class="main-content">
+      <section class="welcome">
+        <h2>Welcome to South Peaks Cycling Club</h2>
+        <p>
+          Based in the heart of {{ .Location }}, we're a passionate
+          community of cyclists exploring the beautiful Peak District and
+          surrounding countryside. Whether you're a beginner looking to build
+          confidence or an experienced rider seeking new challenges, SPCC
+          welcomes cyclists of all abilities.
+        </p>
+      </section>
 
-    <div class="container">
-      <header class="hero" id="hero-section">
-        <div class="hero-content">
-          <img
-            src="/static/spcc_logo.jpg"
-            alt="South Peaks Cycling Club Logo"
-            class="club-logo"
-          />
-          <p class="location">{{ .Location }}</p>
-          <p class="tagline">{{ .Tagline }}</p>
+      <section class="social-links">
+        <h3>Connect With Us</h3>
+        <div class="links-container">
+          <a href="{{ .StravaURL }}" target="_blank" rel="noopener noreferrer" class="social-link strava">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172" />
+            </svg>
+            Join our Strava Club
+          </a>
 
-          <nav class="main-nav">
-            {{ if .IsLoggedIn }}
-              <p class="welcome-message">Welcome, {{ .User.FirstName }}!</p>
-              <a href="/members" class="nav-link">Members Area</a>
-              <a href="/logout" class="nav-link logout-link">Logout</a>
-            {{ else }}
-              <a href="/login/strava" class="nav-link strava-login-button">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172"/>
-                />
-              </svg>
-                Login with Strava
-              </a>
-            {{ end }}
-          </nav>
+          <a href="{{ .InstagramURL }}" target="_blank" rel="noopener noreferrer" class="social-link instagram">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+            </svg>
+            Follow us on Instagram
+          </a>
         </div>
-      </header>
+      </section>
 
-      <main class="main-content">
-        <section class="welcome">
-          <h2>Welcome to South Peaks Cycling Club</h2>
-          <p>
-            Based in the heart of {{ .Location }}, we're a passionate
-            community of cyclists exploring the beautiful Peak District and
-            surrounding countryside. Whether you're a beginner looking to build
-            confidence or an experienced rider seeking new challenges, SPCC
-            welcomes cyclists of all abilities.
-          </p>
-        </section>
-
-        <section class="social-links">
-          <h3>Connect With Us</h3>
-          <div class="links-container">
-            <a
-              href="{{ .StravaURL }}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="social-link strava"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path
-                  d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.008 13.828h4.172"
-                />
-              </svg>
-              Join our Strava Club
-            </a>
-
-            <a
-              href="{{ .InstagramURL }}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="social-link instagram"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path
-                  d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"
-                />
-              </svg>
-              Follow us on Instagram
-            </a>
+      <section class="about">
+        <h3>About Our Rides</h3>
+        <div class="ride-info">
+          <div class="info-card">
+            <h4>Regular Group Rides</h4>
+            <ul>
+              <li>Tuesday Sawley Shuffle - All out effort ride</li>
+              <li>Thursday Social Mid Week Ride</li>
+              <li>Saturday main club ride normally into the peaks</li>
+            </ul>
           </div>
-        </section>
-
-        <section class="about">
-          <h3>About Our Rides</h3>
-          <div class="ride-info">
-            <div class="info-card">
-              <h4>Regular Group Rides</h4>
-              <ul>
-                <li>Tuesday Sawley Shuffle - All out effort ride</li>
-                <li>Thursday Social Mid Week Ride</li>
-                <li>Saturday main club ride normally into the peaks</li>
-              </ul>
-            </div>
-            <div class="info-card">
-              <h4>All Abilities Welcome</h4>
-              <p>
-                From leisurely social rides to challenging hill climbs - there's
-                something for everyone.
-              </p>
-            </div>
-            <div class="info-card">
-              <h4>Local Knowledge</h4>
-              <p>
-                Discover the best routes around Borrowash, Derby, and the Peak
-                District with experienced local riders.
-              </p>
-            </div>
+          <div class="info-card">
+            <h4>All Abilities Welcome</h4>
+            <p>
+              From leisurely social rides to challenging hill climbs - there's
+              something for everyone.
+            </p>
           </div>
-          <!-- Example of where an HTMX interaction could go -->
-          <!--
+          <div class="info-card">
+            <h4>Local Knowledge</h4>
+            <p>
+              Discover the best routes around Borrowash, Derby, and the Peak
+              District with experienced local riders.
+            </p>
+          </div>
+        </div>
+        <!-- Example of where an HTMX interaction could go -->
+        <!--
           <div id="more-ride-info" class="ride-info" style="margin-top: 2rem;">
              Content here could be loaded by HTMX
           </div>
@@ -169,31 +141,27 @@
             Load More Ride Info (HTMX Demo)
           </button>
           -->
-        </section>
+      </section>
 
-        <section class="strava-widget">
-          <h3>Latest Rides from Strava</h3>
-           <div class="widget-container">
-             <iframe
-               allowtransparency='true'
-               frameborder='0'
-               height='454'
-               scrolling='no'
-               src='https://www.strava.com/clubs/451869/latest-rides/eed6a96dfe801eeb8fb2cbc8bdf99ed1c1b124d6?show_rides=true'
-               width='300'
-             ></iframe>
-           </div>
-        </section>
+      <section class="strava-widget">
+        <h3>Latest Rides from Strava</h3>
+        <div class="widget-container">
+          <iframe allowtransparency='true' frameborder='0' height='454' scrolling='no'
+            src='https://www.strava.com/clubs/451869/latest-rides/eed6a96dfe801eeb8fb2cbc8bdf99ed1c1b124d6?show_rides=true'
+            width='300'></iframe>
+        </div>
+      </section>
 
-      </main>
+    </main>
 
-      <footer class="footer">
-        <p>&copy; {{ .CurrentYear }} South Peaks Cycling Club. All rights reserved.</p>
-        <p>{{ .Location }}, UK</p>
-      </footer>
-    </div>
+    <footer class="footer">
+      <p>&copy; {{ .CurrentYear }} South Peaks Cycling Club. All rights reserved.</p>
+      <p>{{ .Location }}, UK</p>
+    </footer>
+  </div>
 
-    <!-- Link to external JavaScript file -->
-    <script src="/static/js/sticky-header.js"></script>
-  </body>
+  <!-- Link to external JavaScript file -->
+  <script src="/static/js/sticky-header.js"></script>
+</body>
+
 </html>

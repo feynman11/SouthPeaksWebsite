@@ -14,9 +14,10 @@
       integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
       crossorigin="anonymous"
     ></script>
-    <link rel="icon" type="image/png" href="/static/favicon.png" />
-    <link rel="shortcut icon" type="image/png" href="/static/favicon.png" />
-    <link rel="apple-touch-icon" href="/static/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/static/favicon/site.webmanifest">
   </head>
   <body>
     <!-- Fixed Header Bar - Initially Hidden -->
@@ -52,7 +53,7 @@
           <p class="tagline">Welcome, {{ .User.FirstName }}!</p>
           <nav class="main-nav">
             <a href="/" class="nav-link">Home</a>
-            <a href="/members" class="nav-link">Members Area</a>
+            {{/* Removed: <a href="/members" class="nav-link">Members Area</a> */}}
             <a href="/logout" class="nav-link logout-link">Logout</a>
           </nav>
         </div>
@@ -67,7 +68,7 @@
           </p>
           {{ end }}
 
-          {{ template "members_grid_fragment.html" . }} {{/* NEW: Include the fragment */}}
+          {{ template "members_grid_fragment.html" . }}
 
         </section>
 
@@ -92,6 +93,22 @@
             </p>
           </section>
           {{ end }}
+
+          <section class="account-management-section">
+            <h3>Account Management</h3>
+            <p class="warning-message">
+              This action is irreversible. Deleting your account will remove all
+              your data from our member records.
+            </p>
+            <button
+              hx-post="/members/delete-account"
+              hx-confirm="Are you absolutely sure you want to delete your account? This cannot be undone."
+              class="delete-account-button"
+            >
+              Delete My Account
+            </button>
+          </section>
+
         {{ end }}
 
       </main>
