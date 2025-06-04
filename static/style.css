@@ -39,7 +39,8 @@ body {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(10px);
   border-radius: 20px;
-  padding: 3rem 2rem;
+  /* --- REDUCED PADDING HERE --- */
+  padding: 2rem 1.5rem; /* Reduced from 3rem 2rem */
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex; /* Added for navigation alignment */
   flex-direction: column; /* Added for navigation alignment */
@@ -47,10 +48,10 @@ body {
 }
 
 .club-logo {
-  /* Scale logo based on container size */
-  max-width: 60%; /* Adjust the percentage as needed */
+  /* --- REDUCED MAX-WIDTH HERE --- */
+  max-width: 40%; /* Reduced from 60%. Adjust as needed. */
   height: auto; /* Maintain aspect ratio */
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem; /* Slightly reduced margin below logo */
   display: block; /* Treat the image as a block element for centering */
   margin-left: auto; /* Center the image horizontally */
   margin-right: auto; /* Center the image horizontally */
@@ -137,6 +138,97 @@ body {
 .nav-link.strava-login-button svg {
   fill: white; /* Ensure SVG icon is white */
 }
+
+
+/* --- Sticky Header Styles --- */
+.sticky-header {
+  position: fixed; /* Fixes it to the viewport */
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.9); /* Dark background with transparency */
+  backdrop-filter: blur(8px);
+  z-index: 1000; /* Ensures it's above other content */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); /* Shadow for depth */
+  transform: translateY(-100%); /* Start hidden above the viewport */
+  transition: transform 0.3s ease-out; /* Smooth transition */
+  padding: 0.5rem 1rem; /* Padding inside the sticky header */
+}
+
+.sticky-header.active {
+  transform: translateY(0); /* Slide into view */
+}
+
+.sticky-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between; /* Space out logo and nav */
+  align-items: center; /* Vertically align items */
+  padding: 0 1rem; /* Inner padding for alignment */
+}
+
+.sticky-logo {
+  height: 40px; /* Fixed height for the small logo */
+  width: auto;
+  margin-right: 1rem; /* Space between logo and nav */
+  transition: height 0.3s ease;
+}
+
+.sticky-nav {
+  display: flex;
+  gap: 0.8rem; /* Space between links in sticky nav */
+  align-items: center;
+}
+
+.nav-link-small {
+  padding: 0.5rem 1rem; /* Smaller padding for links */
+  background-color: #dc143c;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9rem; /* Smaller font size */
+  transition: background-color 0.3s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-link-small:hover {
+  background-color: #a0002b;
+}
+
+.nav-link-small.logout-link-small {
+  background-color: #555;
+}
+
+.nav-link-small.logout-link-small:hover {
+  background-color: #333;
+}
+
+.nav-link-small.strava-login-button-small {
+  background-color: #fc4c02;
+  color: white;
+  border: 1px solid #e63900;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.9rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.nav-link-small.strava-login-button-small:hover {
+  background-color: #e63900;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.nav-link-small.strava-login-button-small svg {
+  fill: white;
+  width: 18px; /* Smaller icon */
+  height: 18px;
+}
+/* --- End Sticky Header Styles --- */
 
 
 /* Main Content Area */
@@ -421,12 +513,13 @@ body {
   }
 
   .hero-content {
-    padding: 2rem 1rem;
+    /* --- REDUCED PADDING FOR SMALLER SCREENS --- */
+    padding: 1.5rem 1rem; /* Reduced from 2rem 1rem */
   }
 
   .club-logo {
     /* Adjust percentage on smaller screens */
-    max-width: 70%;
+    max-width: 50%; /* Adjusted for smaller screens too */
   }
 
   .main-nav {
@@ -471,7 +564,7 @@ body {
 @media (max-width: 480px) {
   .club-logo {
     /* Adjust percentage on very small screens */
-    max-width: 80%;
+    max-width: 60%; /* Adjusted for very small screens too */
   }
   .main-nav {
     gap: 0.5rem;
