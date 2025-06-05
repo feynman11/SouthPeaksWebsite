@@ -24,7 +24,7 @@
       <nav class="sticky-nav">
         {{ if .IsLoggedIn }}
         <a href="/" class="nav-link-small">Home</a>
-        {{ if .User.IsPaidMember }} {{/* Show Routes link only for paid members */}}
+        {{ if .User.IsPaidMember }}
         <a href="/routes" class="nav-link-small">Routes</a>
         {{ end }}
         <a href="/logout" class="nav-link-small logout-link-small">Logout</a>
@@ -43,14 +43,14 @@
 
 
   <div class="container">
-    <header class="hero" id="hero-section">
-      <div class="hero-content">
-        <img src="/static/spcc_logo.jpg" alt="South Peaks Cycling Club Logo" class="club-logo" />
-        <p class="location">{{ .Location }}</p>
+    <header class="hero" id="hero-section"> {{/* Keep ID for sticky header JS */}}
+      <div class="hero-content page-header-compact"> {{/* NEW CLASS for compact header */}}
+        {{/* REMOVED: <img src="/static/spcc_logo.jpg" alt="South Peaks Cycling Club Logo" class="club-logo" /> */}}
+        <p class="location">Club Members</p> {{/* Simplified local, now acting as page title */}}
         <p class="tagline">Welcome, {{ .User.FirstName }}!</p>
         <nav class="main-nav">
           <a href="/" class="nav-link">Home</a>
-          {{ if .User.IsPaidMember }} {{/* Show Routes link only for paid members */}}
+          {{ if .User.IsPaidMember }}
           <a href="/routes" class="nav-link">Routes</a>
           {{ end }}
           <a href="/logout" class="nav-link logout-link">Logout</a>
