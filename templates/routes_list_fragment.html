@@ -1,17 +1,21 @@
 {{/* templates/routes_list_fragment.html */}}
 
 <div class="routes-list-container" id="routes-list-container">
-  {{ if .Routes }}
-  <div class="routes-grid">
+
+  {{/* Thursday Routes Section */}}
+  <h3 class="route-category-heading">Thursday Routes</h3>
+  <p class="route-category-description">Typically shorter, faster mid-week efforts or social rides.</p>
+  <div class="routes-grid thursday-routes-grid" id="thursday-routes-grid">
+    {{ $foundThursday := false }}
     {{ range .Routes }}
+    {{ if eq .Classify "Thursday" }}
+    {{ $foundThursday = true }}
     <div class="route-card">
       <h4><a href="{{ .URL }}" target="_blank" rel="noopener noreferrer">{{ .Name }}</a></h4>
-      <p class="route-classification">Class: <span>{{ .Classify }}</span></p>
       <p class="route-submitter">Submitted by: {{ .SubmittedByUserName }}</p>
       <p class="route-date">On: {{ .SubmittedAt.Format "Jan 2, 2006" }}</p>
       <div class="route-actions">
-        {{/* Convert $.User.StravaID to string for comparison */}}
-        {{ if or (eq .SubmittedByUserID (printf "%d" $.User.StravaID)) $.IsAdmin }} {{/* FIX HERE */}}
+        {{ if or (eq .SubmittedByUserID (printf "%d" $.User.StravaID)) $.IsAdmin }}
         <form hx-post="/routes/delete" hx-target="#routes-list-container" hx-swap="outerHTML"
           hx-confirm="Are you sure you want to delete this route?" hx-indicator="#delete-route-indicator-{{ .ID }}">
           <input type="hidden" name="routeID" value="{{ .ID }}">
@@ -22,8 +26,71 @@
       </div>
     </div>
     {{ end }}
+    {{ end }}
+    {{ if not $foundThursday }}
+    <p class="no-routes-message">No Thursday routes submitted yet.</p>
+    {{ end }}
   </div>
-  {{ else }}
-  <p class="no-routes-message">No routes have been submitted yet.</p>
-  {{ end }}
+
+  {{/* Saturday Routes Section */}}
+  <h3 class="route-category-heading">Saturday Routes</h3>
+  <p class="route-category-description">Longer, more challenging weekend rides, often into the Peak District.</p>
+  <div class="routes-grid saturday-routes-grid" id="saturday-routes-grid">
+    {{ $foundSaturday := false }}
+    {{ range .Routes }}
+    {{ if eq .Classify "Saturday" }}
+    {{ $foundSaturday = true }}
+    <div class="route-card">
+      <h4><a href="{{ .URL }}" target="_blank" rel="noopener noreferrer">{{ .Name }}</a></h4>
+      <p class="route-submitter">Submitted by: {{ .SubmittedByUserName }}</p>
+      <p class="route-date">On: {{ .SubmittedAt.Format "Jan 2, 2006" }}</p>
+      <div class="route-actions">
+        {{ if or (eq .SubmittedByUserID (printf "%d" $.User.StravaID)) $.IsAdmin }}
+        <form hx-post="/routes/delete" hx-target="#routes-list-container" hx-swap="outerHTML"
+          hx-confirm="Are you sure you want to delete this route?" hx-indicator="#delete-route-indicator-{{ .ID }}">
+          <input type="hidden" name="routeID" value="{{ .ID }}">
+          <button type="submit" class="delete-route-button">Delete</button>
+          <span id="delete-route-indicator-{{ .ID }}" class="htmx-indicator">Deleting...</span>
+        </form>
+        {{ end }}
+      </div>
+    </div>
+    {{ end }}
+    {{ end }}
+    {{ if not $foundSaturday }}
+    <p class="no-routes-message">No Saturday routes submitted yet.</p>
+    {{ end }}
+  </div>
+
+  {{/* Other/Trips Section (for unclassified or future types) */}}
+  <h3 class="route-category-heading">Other Routes & Trips</h3>
+  <p class="route-category-description">Special events, multi-day trips, or routes not yet classified.</p>
+  <div class="routes-grid other-routes-grid" id="other-routes-grid">
+    {{ $foundOther := false }}
+    {{ range .Routes }}
+    {{ if and (ne .Classify "Thursday") (ne .Classify "Saturday") }}
+    {{ $foundOther = true }}
+    <div class="route-card">
+      <h4><a href="{{ .URL }}" target="_blank" rel="noopener noreferrer">{{ .Name }}</a></h4>
+      <p class="route-classification">Class: <span>{{ .Classify }}</span></p>
+      <p class="route-submitter">Submitted by: {{ .SubmittedByUserName }}</p>
+      <p class="route-date">On: {{ .SubmittedAt.Format "Jan 2, 2006" }}</p>
+      <div class="route-actions">
+        {{ if or (eq .SubmittedByUserID (printf "%d" $.User.StravaID)) $.IsAdmin }}
+        <form hx-post="/routes/delete" hx-target="#routes-list-container" hx-swap="outerHTML"
+          hx-confirm="Are you sure you want to delete this route?" hx-indicator="#delete-route-indicator-{{ .ID }}">
+          <input type="hidden" name="routeID" value="{{ .ID }}">
+          <button type="submit" class="delete-route-button">Delete</button>
+          <span id="delete-route-indicator-{{ .ID }}" class="htmx-indicator">Deleting...</span>
+        </form>
+        {{ end }}
+      </div>
+    </div>
+    {{ end }}
+    {{ end }}
+    {{ if not $foundOther }}
+    <p class="no-routes-message">No other routes or trips submitted yet.</p>
+    {{ end }}
+  </div>
+
 </div>

@@ -678,7 +678,8 @@ body {
 }
 .form-group input[type="text"],
 .form-group input[type="url"],
-.form-group select {
+.form-group select,
+.form-group input[type="search"] { /* ADDED search input type */
   width: 100%;
   padding: 0.8rem;
   border: 1px solid #ccc;
@@ -688,7 +689,8 @@ body {
 }
 .form-group input[type="text"]:focus,
 .form-group input[type="url"]:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group input[type="search"]:focus { /* ADDED search input type */
   outline: none;
   border-color: #dc143c; /* Accent color */
 }
@@ -746,6 +748,15 @@ body {
   color: #0056b3;
 }
 
+/* Specific styling for the search input and select */
+.submit-route-form input[type="search"] {
+    margin-bottom: 0.8rem; /* Space between search box and select */
+}
+.submit-route-form select[name="stravaRouteSelect"] {
+    height: 200px; /* Make the select a scrollable list */
+    overflow-y: auto;
+}
+
 
 /* My Submitted Routes Section */
 .my-routes-list {
@@ -801,10 +812,30 @@ body {
   margin-bottom: 2rem; /* Space below the entire route list section */
 }
 
+/* Styles for the new split route categories */
+.route-category-heading {
+  font-size: 1.8rem; /* Slightly smaller than main h3 for sub-category */
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-top: 2.5rem; /* Space between categories */
+  margin-bottom: 0.8rem; /* Space below heading */
+  text-align: center;
+  border-bottom: 2px solid #eee; /* Subtle separator line */
+  padding-bottom: 0.5rem;
+}
+
+.route-category-description {
+  font-size: 0.95rem;
+  color: #666;
+  text-align: center;
+  margin-bottom: 1.5rem; /* Space below description */
+}
+
 .routes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  /* Reduced minmax size */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Reduced from 280px */
+  gap: 1rem; /* Slightly reduced gap between cards */
   justify-content: center;
 }
 
@@ -812,7 +843,8 @@ body {
   background: #f8f8f8;
   border-radius: 10px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-  padding: 1.5rem;
+  /* Reduced padding */
+  padding: 1rem 1.2rem; /* Reduced from 1.5rem */
   text-align: left;
   transition: transform 0.2s ease;
   border-left: 5px solid #dc143c; /* Accent color */
@@ -824,8 +856,9 @@ body {
 }
 
 .route-card h4 {
-  font-size: 1.4rem;
-  margin-bottom: 0.8rem;
+  /* Reduced font size */
+  font-size: 1.2rem; /* Reduced from 1.4rem */
+  margin-bottom: 0.6rem; /* Slightly reduced margin */
 }
 
 .route-card h4 a {
@@ -840,9 +873,10 @@ body {
 }
 
 .route-card p {
-  font-size: 0.95rem;
+  /* Reduced font size */
+  font-size: 0.85rem; /* Reduced from 0.95rem */
   color: #555;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.3rem; /* Slightly reduced margin */
 }
 
 .route-card p.route-classification span {
@@ -851,25 +885,37 @@ body {
 }
 
 .route-card p.route-date {
-  font-size: 0.85rem;
+  /* Reduced font size */
+  font-size: 0.75rem; /* Reduced from 0.85rem */
   color: #888;
-  margin-top: 1rem;
+  margin-top: 0.8rem; /* Slightly reduced margin */
   text-align: right;
 }
 
-.no-routes-message {
-  font-style: italic;
-  color: #777;
-  text-align: center;
-  padding: 1rem;
-  background-color: #f8f8f8;
-  border-radius: 8px;
-  margin-top: 1rem;
+/* Specific styling for route cards based on classification (optional) */
+/* This can be added to make routes stand out visually by category */
+.routes-grid.thursday-routes-grid .route-card {
+  border-left-color: #007bff; /* Example: Blue for Thursday */
+}
+
+.routes-grid.saturday-routes-grid .route-card {
+  border-left-color: #28a745; /* Example: Green for Saturday */
+}
+
+.routes-grid.other-routes-grid .route-card {
+  border-left-color: #ffc107; /* Example: Yellow for Other/Trips */
+}
+
+
+/* Adjustments for no-routes-message within categories */
+.routes-list-container .no-routes-message {
+  grid-column: 1 / -1; /* Ensure it spans all columns in its parent grid */
+  margin-bottom: 1.5rem; /* Adjusted spacing */
 }
 
 /* Route Card Actions (Delete Button) */
 .route-card .route-actions {
-  margin-top: 1rem;
+  margin-top: 0.8rem; /* Slightly reduced margin */
   text-align: right;
 }
 
@@ -878,8 +924,8 @@ body {
   color: white;
   border: none;
   border-radius: 4px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.4rem 0.8rem; /* Reduced padding */
+  font-size: 0.8rem; /* Reduced font size */
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
@@ -892,33 +938,6 @@ body {
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
 }
 
-.form-separator {
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #666;
-    margin: 1.5rem auto;
-    position: relative;
-    width: 80%; /* Adjust as needed */
-}
-
-.form-separator::before,
-.form-separator::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 40%; /* Adjust width of line */
-    height: 1px;
-    background-color: #ccc;
-}
-
-.form-separator::before {
-    left: 0;
-}
-
-.form-separator::after {
-    right: 0;
-}
 
 /* Footer */
 .footer {
@@ -1009,6 +1028,14 @@ body {
 
   .my-routes-list {
     padding: 1.5rem;
+  }
+
+  .routes-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Adjust for smaller screens too */
+  }
+
+  .route-card {
+    padding: 0.8rem 1rem;
   }
 }
 

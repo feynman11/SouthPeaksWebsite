@@ -104,6 +104,7 @@ func main() {
 	mux.HandleFunc("/routes", routesHandler)
 	mux.HandleFunc("/routes/submit", submitRouteHandler)
 	mux.HandleFunc("/routes/delete", deleteRouteHandler)
+	mux.HandleFunc("/routes/search-strava", searchStravaRoutesHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {

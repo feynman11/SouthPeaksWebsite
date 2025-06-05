@@ -415,8 +415,8 @@ func searchStravaRoutesHandler(w http.ResponseWriter, r *http.Request) {
 
 	filteredRoutes := []StravaRouteAPI{}
 	if query == "" {
-		// If no query, return a subset or default message. For search, usually return all.
-		filteredRoutes = allStravaRoutes // Return all initially, or a sensible default
+		// If no query, return ALL fetched Strava routes by default
+		filteredRoutes = allStravaRoutes
 	} else {
 		lowerQuery := strings.ToLower(query)
 		for _, route := range allStravaRoutes {
@@ -428,10 +428,14 @@ func searchStravaRoutesHandler(w http.ResponseWriter, r *http.Request) {
 
 	var optionsHTML strings.Builder
 	optionsHTML.WriteString(`<option value="">-- Select a Strava Route --</option>`) // Always include an empty default
-	if len(filteredRoutes) == 0 && query != "" {
-		optionsHTML.WriteString(fmt.Sprintf(`<option value="" disabled>-- No matching routes for "%s" --</option>`, query))
-	} else if len(filteredRoutes) == 0 && query == "" {
-		optionsHTML.WriteString(`<option value="" disabled>-- No Strava Routes found --</option>`) // Initial empty state if no routes
+
+	if len(filteredRoutes) == 0 {
+		// This block covers both "no routes found for search" and "no routes at all"
+		if query != "" {
+			optionsHTML.WriteString(fmt.Sprintf(`<option value="" disabled>-- No matching routes for "%s" --</option>`, query))
+		} else {
+			optionsHTML.WriteString(`<option value="" disabled>-- No Strava Routes found --</option>`) // If no routes at all
+		}
 	} else {
 		for _, route := range filteredRoutes {
 			optionsHTML.WriteString(fmt.Sprintf(
@@ -545,7 +549,7 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Apply classification (from dropdown for both new and existing submissions)
-	if routeClassify != "Thursday" && routeClassify != "Saturday" {
+	if routeClassify != "Thursday" && routeClassify != "Saturday" && routeClassify != "Other" {
 		http.Error(w, "Invalid route classification", http.StatusBadRequest)
 		return
 	}
