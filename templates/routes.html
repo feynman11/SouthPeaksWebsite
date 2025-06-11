@@ -47,7 +47,7 @@
       <div class="hero-content page-header-compact"> {{/* NEW CLASS for compact header */}}
         {{/* REMOVED: <img src="/static/spcc_logo.jpg" alt="South Peaks Cycling Club Logo" class="club-logo" /> */}}
         <p class="location">Club Routes</p> {{/* Simplified local, now acting as page title */}}
-        <p class="tagline">{{/* REMOVED: Club Routes - now part of p.location */}}</p> {{/* Welcome, {{ .User.FirstName
+        <p class="tagline"></p> {{/* Welcome, {{ .User.FirstName
         }}! or similar */}}
         <nav class="main-nav">
           <a href="/" class="nav-link">Home</a>
@@ -113,12 +113,11 @@
           <div class="form-group">
             <label for="stravaRouteSearch">Search your Strava Routes:</label>
             <input type="search" name="q" placeholder="Type to search or leave blank for all..."
-              hx-get="/routes/search-strava" hx-trigger="keyup changed delay:500ms, search, load" hx-target="#stravaRouteOptions" hx-swap="innerHTML" class="search-input"
-              id="stravaRouteSearch" />
-            <select id="stravaRouteSelect" name="stravaRouteSelect" size="10" required>
-              <div id="stravaRouteOptions">
-                {{/* Options will be loaded here by HTMX */}}
-              </div>
+              hx-get="/routes/search-strava" hx-trigger="keyup changed delay:300ms, search, load"
+              hx-target="#stravaRouteSelect" hx-swap="innerHTML" class="search-input" id="stravaRouteSearch" />
+            <select id="stravaRouteSelect" name="stravaRouteSelect" size="10" required hx-target="this"
+              hx-swap="innerHTML">
+              {{ .StravaUserRoutes }}
             </select>
           </div>
           <div class="form-group">

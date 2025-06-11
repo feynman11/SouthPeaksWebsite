@@ -42,7 +42,7 @@ type TemplateData struct {
 	Members          []User  // For members page (all members)
 	Routes           []Route // For routes page (all club routes)
 	UserRoutes       []Route // For routes page (user's own submitted routes)
-	StravaUserRoutes []StravaRouteAPI
+	StravaUserRoutes string
 }
 
 var tmpl *template.Template
@@ -166,7 +166,7 @@ func getUserFromSession(r *http.Request) (*User, bool) {
 	ctx := r.Context()
 	user, err := GetUserByID(ctx, userID)
 	if err != nil {
-		log.Printf("Error getting user from Firestore by ID %d: %v", userID, err)
+		log.Printf("Error getting user from DB by ID %d: %v", userID, err)
 		return nil, false
 	}
 	currentAuthUser = user

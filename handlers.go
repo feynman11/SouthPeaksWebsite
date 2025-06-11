@@ -85,7 +85,7 @@ func stravaCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if user exists in Firestore, create or update
+	// Check if user exists in DB, create or update
 	user, err := GetUserByID(ctx, athlete.ID)
 	if err != nil && err.Error() == "user not found" {
 		// User does not exist, create new
@@ -102,13 +102,13 @@ func stravaCallbackHandler(w http.ResponseWriter, r *http.Request) {
 			AccessTokenExp: token.Expiry,
 		}
 		if err := CreateUser(ctx, user); err != nil {
-			log.Printf("Error creating user in Firestore: %v", err)
+			log.Printf("Error creating user in DB: %v", err)
 			http.Error(w, "Failed to create user", http.StatusInternalServerError)
 			return
 		}
 		log.Printf("New user registered: %s %s (Strava ID: %d)", user.FirstName, user.LastName, user.StravaID)
 	} else if err != nil {
-		log.Printf("Error getting user from Firestore: %v", err)
+		log.Printf("Error getting user from DB: %v", err)
 		http.Error(w, "Failed to retrieve user data", http.StatusInternalServerError)
 		return
 	} else {
@@ -118,7 +118,7 @@ func stravaCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		user.AccessTokenExp = token.Expiry
 		user.LastLogin = time.Now()
 		if err := UpdateUser(ctx, user); err != nil {
-			log.Printf("Error updating user in Firestore: %v", err)
+			log.Printf("Error updating user in DB: %v", err)
 			http.Error(w, "Failed to update user data", http.StatusInternalServerError)
 			return
 		}
@@ -170,7 +170,7 @@ func membersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	members, err := GetAllUsers(ctx) // Fetch all users from Firestore
+	members, err := GetAllUsers(ctx) // Fetch all users from DB
 	if err != nil {
 		log.Printf("Error fetching all members: %v", err)
 		http.Error(w, "Failed to load members list", http.StatusInternalServerError)
@@ -268,9 +268,9 @@ func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	// 1. Delete user from Firestore
+	// 1. Delete user from DB
 	if err := DeleteUser(ctx, userID); err != nil {
-		log.Printf("Error deleting user %d from Firestore: %v", userID, err)
+		log.Printf("Error deleting user %d from DB: %v", userID, err)
 		http.Error(w, "Failed to delete account from database", http.StatusInternalServerError)
 		return
 	}
@@ -298,7 +298,7 @@ func routesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	routes, err := GetAllRoutes(ctx) // All club routes from Firestore
+	routes, err := GetAllRoutes(ctx) // All club routes from DB
 	if err != nil {
 		log.Printf("Error fetching all club routes for routes page: %v", err)
 		http.Error(w, "Failed to load club routes list", http.StatusInternalServerError)
@@ -317,6 +317,7 @@ func routesHandler(w http.ResponseWriter, r *http.Request) {
 	// This is for the initial load of the Strava routes dropdown.
 	// It's still necessary here for the initial page render.
 	stravaUserRoutesForDropdown := []StravaRouteAPI{}
+	stravaUserRoutesOptions := ""
 	if isLoggedIn && user.IsPaidMember { // Only fetch Strava routes if paid member
 		accessToken, err := GetFreshStravaToken(ctx, user)
 		if err != nil {
@@ -330,24 +331,22 @@ func routesHandler(w http.ResponseWriter, r *http.Request) {
 				// User will see an error in the form if routes couldn't be loaded
 			}
 		}
+		stravaUserRoutesOptions = buildStravaRouteOptions(stravaUserRoutesForDropdown, "")
 	}
-
 	data := TemplateData{
 		Location:         "Borrowash, Derbyshire",
 		CurrentYear:      time.Now().Year(),
 		IsLoggedIn:       true,
 		User:             user,
 		IsAdmin:          user.IsAdmin,
-		Routes:           routes,                      // All club routes
-		UserRoutes:       userSubmittedRoutes,         // User's previously submitted club routes
-		StravaUserRoutes: stravaUserRoutesForDropdown, // For initial dropdown population
+		Routes:           routes,                  // All club routes
+		UserRoutes:       userSubmittedRoutes,     // User's previously submitted club routes
+		StravaUserRoutes: stravaUserRoutesOptions, // Pass HTML string to template
 	}
 
-	// Remove: w.WriteHeader(http.StatusOK) HERE, it's superfluous as tmpl.ExecuteTemplate does it
 	err = tmpl.ExecuteTemplate(w, "routes.html", data) // Render routes template
 	if err != nil {
 		log.Printf("Error executing routes template: %v", err)
-		// Only send http.Error if template execution fails
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -393,10 +392,9 @@ func searchStravaRoutesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query().Get("q") // The search query from HTMX (e.g., hx-trigger="keyup changed" or hx-trigger="search")
+	query := r.URL.Query().Get("q")
 	ctx := r.Context()
 
-	// This is the source of truth for the dropdown, fetched directly from Strava
 	accessToken, err := GetFreshStravaToken(ctx, user)
 	if err != nil {
 		log.Printf("Error getting fresh Strava token for search: %v", err)
@@ -410,11 +408,9 @@ func searchStravaRoutesHandler(w http.ResponseWriter, r *http.Request) {
 		writeDropdownError(w, "Error fetching routes")
 		return
 	}
-	log.Print("Fetched all Strava routes for user ", user.StravaID)
 
 	filteredRoutes := []StravaRouteAPI{}
 	if query == "" {
-		// If no query, return ALL fetched Strava routes by default
 		filteredRoutes = allStravaRoutes
 	} else {
 		lowerQuery := strings.ToLower(query)
@@ -424,32 +420,10 @@ func searchStravaRoutesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	log.Printf("Filtered %d Strava routes for query %q (user: %d)", len(filteredRoutes), query, user.StravaID)
 
-	var optionsHTML strings.Builder
-	optionsHTML.WriteString(`<option value="">-- Select a Strava Route --</option>`) // Always include an empty default
-
-	if len(filteredRoutes) == 0 {
-		// This block covers both "no routes found for search" and "no routes at all"
-		if query != "" {
-			optionsHTML.WriteString(fmt.Sprintf(`<option value="" disabled>-- No matching routes for "%s" --</option>`, query))
-		} else {
-			optionsHTML.WriteString(`<option value="" disabled>-- No Strava Routes found --</option>`) // If no routes at all
-		}
-	} else {
-		for _, route := range filteredRoutes {
-			optionsHTML.WriteString(fmt.Sprintf(
-				`<option value="%d">%s (%.1fkm, %.0fm Gain)</option>`,
-				route.ID,
-				route.Name,
-				route.Distance/1000, // Convert meters to kilometers
-				route.ElevationGain,
-			))
-		}
-	}
-	log.Printf("Returning %d <option> tags for Strava route search (query: %q, user: %d)", len(filteredRoutes), query, user.StravaID)
+	optionsHTML := buildStravaRouteOptions(filteredRoutes, query)
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(optionsHTML.String()))
+	w.Write([]byte(optionsHTML))
 }
 
 // submitRouteHandler handles the submission (creation or re-classification) of routes
@@ -554,9 +528,9 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	routeToSave.Classify = routeClassify
 
-	// Save or update the route in Firestore
+	// Save or update the route in DB
 	if err := CreateRoute(ctx, routeToSave); err != nil {
-		log.Printf("Error creating/updating route in Firestore: %v", err)
+		log.Printf("Error creating/updating route in DB: %v", err)
 		http.Error(w, "Failed to submit/update route", http.StatusInternalServerError)
 		return
 	}
@@ -585,7 +559,6 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 		IsAdmin:    user.IsAdmin,
 		Routes:     allRoutes,
 		UserRoutes: filteredUserRoutes,
-		// StravaUserRoutes is only needed for initial routes page load and dynamic search
 	}
 
 	w.Header().Set("Content-Type", "text/html")
@@ -630,7 +603,7 @@ func deleteRouteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := DeleteRoute(ctx, routeID); err != nil {
-		log.Printf("Error deleting route %s from Firestore: %v", routeID, err)
+		log.Printf("Error deleting route %s from DB: %v", routeID, err)
 		http.Error(w, "Failed to delete route from database", http.StatusInternalServerError)
 		return
 	}
@@ -668,6 +641,29 @@ func deleteRouteHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error executing routes_list_fragment template: %v", err)
 		http.Error(w, "Failed to render updated routes list", http.StatusInternalServerError)
 	}
+}
+
+// Helper to build <option> HTML for Strava routes
+func buildStravaRouteOptions(routes []StravaRouteAPI, query string) string {
+	var optionsHTML strings.Builder
+	if len(routes) == 0 {
+		if query != "" {
+			optionsHTML.WriteString(fmt.Sprintf(`<option value="" disabled>-- No matching routes for "%s" --</option>`, query))
+		} else {
+			optionsHTML.WriteString(`<option value="" disabled>-- No Strava Routes found --</option>`)
+		}
+	} else {
+		for _, route := range routes {
+			optionsHTML.WriteString(fmt.Sprintf(
+				`<option value="%d">%s (%.1fkm, %.0fm Gain)</option>`,
+				route.ID,
+				route.Name,
+				route.Distance/1000,
+				route.ElevationGain,
+			))
+		}
+	}
+	return optionsHTML.String()
 }
 
 func writeDropdownError(w http.ResponseWriter, msg string) {

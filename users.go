@@ -139,5 +139,6 @@ func GetFreshStravaToken(ctx context.Context, user *User) (string, error) {
 		}
 	}
 	log.Printf("Using Strava token for user %d", user.StravaID)
+
 	return user.AccessToken, nil
 }
