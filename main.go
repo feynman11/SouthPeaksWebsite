@@ -11,8 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"cloud.google.com/go/firestore"
 	"github.com/gorilla/sessions"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/oauth2"
 )
 
@@ -23,23 +24,24 @@ var (
 	sessionSecretKey   = os.Getenv("SESSION_SECRET_KEY")
 	oauthCallbackURL   = os.Getenv("OAUTH_CALLBACK_URL") // e.g., "https://www.southpeakscc.co.uk" or "http://localhost:8081"
 
-	store = sessions.NewCookieStore([]byte(sessionSecretKey))
+	store           = sessions.NewCookieStore([]byte(sessionSecretKey))
 	stravaOAuthConf *oauth2.Config
-	firestoreClient *firestore.Client
+	mongoClient     *mongo.Client
+	mongoDB         *mongo.Database
 )
 
 // TemplateData holds data to be passed to HTML templates
 type TemplateData struct {
-	Location     string
-	StravaURL    string
-	InstagramURL string
-	CurrentYear  int
-	IsLoggedIn bool
-	User       *User
-	IsAdmin    bool
-	Members    []User    // For members page (all members)
-	Routes     []Route   // For routes page (all club routes)
-	UserRoutes []Route   // For routes page (user's own submitted routes)
+	Location         string
+	StravaURL        string
+	InstagramURL     string
+	CurrentYear      int
+	IsLoggedIn       bool
+	User             *User
+	IsAdmin          bool
+	Members          []User  // For members page (all members)
+	Routes           []Route // For routes page (all club routes)
+	UserRoutes       []Route // For routes page (user's own submitted routes)
 	StravaUserRoutes []StravaRouteAPI
 }
 
@@ -62,27 +64,24 @@ func main() {
 		},
 	}
 
-	// Initialize Firestore
 	ctx := context.Background()
 	var err error
 
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if projectID == "" {
-		log.Println("GOOGLE_CLOUD_PROJECT not set. Using default client for local testing. Remember to set your actual project ID if not using emulator.")
-		projectID = "southpeakswebsite" // <-- REPLACE WITH YOUR ACTUAL GOOGLE CLOUD PROJECT ID for local non-emulator testing
+	// Initialize MongoDB
+	mongoURI := os.Getenv("MONGODB_URI")
+	if mongoURI == "" {
+		log.Fatal("Missing MONGODB_URI environment variable")
 	}
-
-	log.Printf("Connecting to cloud Firestore project %s, database %s", projectID)
-	// Use firestore.WithDatabase for your named database in the cloud
-	firestoreClient, err = firestore.NewClient(ctx, projectID)
-
+	mongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
-		log.Fatalf("Failed to create Firestore client: %v", err)
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
+	mongoDB = mongoClient.Database("southpeakscc") // or your db name
+
 	defer func() {
-		log.Println("Closing Firestore client...")
-		if clientErr := firestoreClient.Close(); clientErr != nil {
-			log.Printf("Error closing Firestore client: %v", clientErr)
+		log.Println("Closing MongoDB client...")
+		if err := mongoClient.Disconnect(ctx); err != nil {
+			log.Printf("Error closing MongoDB client: %v", err)
 		}
 	}()
 

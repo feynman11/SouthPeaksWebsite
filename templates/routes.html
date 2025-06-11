@@ -113,10 +113,9 @@
           <div class="form-group">
             <label for="stravaRouteSearch">Search your Strava Routes:</label>
             <input type="search" name="q" placeholder="Type to search or leave blank for all..."
-              hx-get="/routes/search-strava" hx-trigger="keyup changed delay:500ms, search, load"
-              hx-target="#stravaRouteOptions" hx-swap="innerHTML" class="search-input" id="stravaRouteSearch" />
+              hx-get="/routes/search-strava" hx-trigger="keyup changed delay:500ms, search, load" hx-target="#stravaRouteOptions" hx-swap="innerHTML" class="search-input"
+              id="stravaRouteSearch" />
             <select id="stravaRouteSelect" name="stravaRouteSelect" size="10" required>
-              <option value="">-- Start typing to search your Strava Routes --</option>
               <div id="stravaRouteOptions">
                 {{/* Options will be loaded here by HTMX */}}
               </div>
@@ -128,6 +127,7 @@
               <option value="">Select a classification</option>
               <option value="Thursday">Thursday Route</option>
               <option value="Saturday">Saturday Route</option>
+              <option value="Other">Other Routes</option>
             </select>
           </div>
           <button type="submit" class="submit-route-button">Add Selected Strava Route</button>

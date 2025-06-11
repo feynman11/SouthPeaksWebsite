@@ -6,14 +6,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil" // For reading response body
+	"io" // Use io instead of deprecated ioutil
 	"log"
 	"net/http"
 	"strconv"
-	"strings" // For string manipulation (search)
+	"strings"
 	"time"
 
-	// "github.com/gorilla/sessions" // This import is not needed here as 'store' is global in main.go
 	"golang.org/x/oauth2"
 )
 
@@ -194,7 +193,6 @@ func membersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 // adminTogglePaidHandler allows an admin to toggle paid status for a member
 func adminTogglePaidHandler(w http.ResponseWriter, r *http.Request) {
 	user, isLoggedIn := getUserFromSession(r)
@@ -289,7 +287,6 @@ func deleteAccountHandler(w http.ResponseWriter, r *http.Request) {
 	// Use HX-Redirect for a clean browser-side redirect
 	w.Header().Set("HX-Redirect", "/") // Tell HTMX to redirect the browser to the home page
 	w.WriteHeader(http.StatusOK)
-	return
 }
 
 // routesHandler displays the routes page
@@ -309,7 +306,7 @@ func routesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userSubmittedRoutes := []Route{} // Routes previously submitted by current user to the club
-	if isLoggedIn { // Only fetch user's routes if logged in
+	if isLoggedIn {                  // Only fetch user's routes if logged in
 		// Convert int64 StravaID to string for GetUserRoutes
 		userSubmittedRoutes, err = GetUserRoutes(ctx, strconv.FormatInt(user.StravaID, 10))
 		if err != nil { // Corrected: Using 'err' here
@@ -336,13 +333,13 @@ func routesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := TemplateData{
-		Location:    "Borrowash, Derbyshire",
-		CurrentYear: time.Now().Year(),
-		IsLoggedIn:  true,
-		User:        user,
-		IsAdmin:     user.IsAdmin,
-		Routes:      routes,                      // All club routes
-		UserRoutes:  userSubmittedRoutes,         // User's previously submitted club routes
+		Location:         "Borrowash, Derbyshire",
+		CurrentYear:      time.Now().Year(),
+		IsLoggedIn:       true,
+		User:             user,
+		IsAdmin:          user.IsAdmin,
+		Routes:           routes,                      // All club routes
+		UserRoutes:       userSubmittedRoutes,         // User's previously submitted club routes
 		StravaUserRoutes: stravaUserRoutesForDropdown, // For initial dropdown population
 	}
 
@@ -369,7 +366,7 @@ func fetchStravaUserRoutes(ctx context.Context, accessToken string, athleteID in
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		bodyBytes, _ := io.ReadAll(resp.Body) // updated from ioutil.ReadAll
 		log.Printf("Strava API route fetch failed for user %d. Status: %d, Body: %s", athleteID, resp.StatusCode, string(bodyBytes))
 		return nil, fmt.Errorf("strava API route fetch returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -378,6 +375,7 @@ func fetchStravaUserRoutes(ctx context.Context, accessToken string, athleteID in
 	if err := json.NewDecoder(resp.Body).Decode(&stravaRoutes); err != nil {
 		return nil, fmt.Errorf("failed to decode Strava routes JSON: %w", err)
 	}
+	log.Printf("Fetched %d routes from Strava API for athlete %d", len(stravaRoutes), athleteID)
 
 	return stravaRoutes, nil
 }
@@ -402,16 +400,17 @@ func searchStravaRoutesHandler(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := GetFreshStravaToken(ctx, user)
 	if err != nil {
 		log.Printf("Error getting fresh Strava token for search: %v", err)
-		w.Write([]byte(`<option value="">-- Failed to load routes --</option>`)) // HTMX expects options
+		writeDropdownError(w, "Failed to load routes")
 		return
 	}
 
-	allStravaRoutes, fetchErr := fetchStravaUserRoutes(ctx, accessToken, user.StravaID) // Fetches all up to per_page limit
+	allStravaRoutes, fetchErr := fetchStravaUserRoutes(ctx, accessToken, user.StravaID)
 	if fetchErr != nil {
 		log.Printf("Error fetching all Strava routes for search: %v", fetchErr)
-		w.Write([]byte(`<option value="">-- Error fetching routes --</option>`)) // HTMX expects options
+		writeDropdownError(w, "Error fetching routes")
 		return
 	}
+	log.Print("Fetched all Strava routes for user ", user.StravaID)
 
 	filteredRoutes := []StravaRouteAPI{}
 	if query == "" {
@@ -425,6 +424,7 @@ func searchStravaRoutesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	log.Printf("Filtered %d Strava routes for query %q (user: %d)", len(filteredRoutes), query, user.StravaID)
 
 	var optionsHTML strings.Builder
 	optionsHTML.WriteString(`<option value="">-- Select a Strava Route --</option>`) // Always include an empty default
@@ -447,11 +447,10 @@ func searchStravaRoutesHandler(w http.ResponseWriter, r *http.Request) {
 			))
 		}
 	}
-
+	log.Printf("Returning %d <option> tags for Strava route search (query: %q, user: %d)", len(filteredRoutes), query, user.StravaID)
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(optionsHTML.String()))
 }
-
 
 // submitRouteHandler handles the submission (creation or re-classification) of routes
 func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
@@ -493,7 +492,7 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		existingRoute.Classify = routeClassify // Update classification
-		routeToSave = existingRoute // Use existing route for update
+		routeToSave = existingRoute            // Use existing route for update
 	} else if stravaRouteSelectID != "" {
 		// --- Scenario 2: User is adding a route from their Strava list ---
 		stravaRouteID, err := strconv.ParseInt(stravaRouteSelectID, 10, 64)
@@ -509,7 +508,7 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to authenticate with Strava API", http.StatusInternalServerError)
 			return
 		}
-		
+
 		specificRouteURL := fmt.Sprintf("https://www.strava.com/api/v3/routes/%d", stravaRouteID)
 
 		client := stravaOAuthConf.Client(ctx, &oauth2.Token{AccessToken: accessToken})
@@ -522,7 +521,7 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			bodyBytes, _ := ioutil.ReadAll(resp.Body)
+			bodyBytes, _ := io.ReadAll(resp.Body) // updated from ioutil.ReadAll
 			log.Printf("Strava API specific route fetch failed. Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
 			http.Error(w, "Failed to retrieve Strava route details", http.StatusInternalServerError)
 			return
@@ -669,4 +668,9 @@ func deleteRouteHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error executing routes_list_fragment template: %v", err)
 		http.Error(w, "Failed to render updated routes list", http.StatusInternalServerError)
 	}
+}
+
+func writeDropdownError(w http.ResponseWriter, msg string) {
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(fmt.Sprintf(`<option value="">-- %s --</option>`, msg)))
 }
