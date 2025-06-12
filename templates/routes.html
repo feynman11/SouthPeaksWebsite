@@ -5,7 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>South Peaks Cycling Club | Routes</title>
-  <link rel="stylesheet" href="/static/style.css?v={{ .CSSVersion }}" />
+  <link rel="stylesheet" href="/static/style.css?v={{ .CSSVersion }}" />  
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"
     integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
@@ -14,6 +15,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
   <link rel="manifest" href="/static/favicon/site.webmanifest">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </head>
 
 <body>
@@ -115,15 +118,18 @@
             <input type="search" name="q" placeholder="Type to search or leave blank for all..."
               hx-get="/routes/search-strava" hx-trigger="keyup changed delay:300ms, search, load"
               hx-target="#stravaRouteSelect" hx-swap="innerHTML" class="search-input" id="stravaRouteSearch" />
-            <select id="stravaRouteSelect" name="stravaRouteSelect" size="10" required hx-target="this"
-              hx-swap="innerHTML">
+          </div>
+          <div class="form-group">
+            <label for="stravaRouteSelect">Select your Strava Route:</label>
+            <select id="stravaRouteSelect" name="stravaRouteSelect" required style="height: 48px;">
+              <option value="" disabled selected>Select a Strava Route</option>
               {{ .StravaUserRoutes }}
             </select>
           </div>
           <div class="form-group">
             <label for="classifySelectedStravaRoute">Classify as:</label>
-            <select id="classifySelectedStravaRoute" name="routeClassify" required>
-              <option value="">Select a classification</option>
+            <select id="classifySelectedStravaRoute" name="routeClassify" required style="height: 48px;">
+              <option value="" disabled selected>Select a classification</option>
               <option value="Thursday">Thursday Route</option>
               <option value="Saturday">Saturday Route</option>
               <option value="Other">Other Routes</option>
@@ -157,6 +163,14 @@
 
   <!-- Link to external JavaScript file -->
   <script src="/static/js/sticky-header.js"></script>
+  <!-- Initialize Select2 (at the end of your body) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      $('#stravaRouteSelect').select2({
+        placeholder: "Select a Strava Route"
+      });
+    });
+  </script>
 </body>
 
 </html>

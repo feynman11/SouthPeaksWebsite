@@ -9,6 +9,7 @@ import (
 	"io" // Use io instead of deprecated ioutil
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -306,44 +307,40 @@ func routesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userSubmittedRoutes := []Route{} // Routes previously submitted by current user to the club
-	if isLoggedIn {                  // Only fetch user's routes if logged in
-		// Convert int64 StravaID to string for GetUserRoutes
+	userSubmittedRoutes := []Route{}
+	if isLoggedIn {
 		userSubmittedRoutes, err = GetUserRoutes(ctx, strconv.FormatInt(user.StravaID, 10))
-		if err != nil { // Corrected: Using 'err' here
-			log.Printf("Error fetching user's previously submitted routes: %v", err) // Corrected: Using 'err' here
+		if err != nil {
+			log.Printf("Error fetching user's previously submitted routes: %v", err)
 		}
 	}
 
-	// This is for the initial load of the Strava routes dropdown.
-	// It's still necessary here for the initial page render.
 	stravaUserRoutesForDropdown := []StravaRouteAPI{}
-	stravaUserRoutesOptions := ""
-	if isLoggedIn && user.IsPaidMember { // Only fetch Strava routes if paid member
+	var stravaUserRoutesOptions string
+	if isLoggedIn && user.IsPaidMember {
 		accessToken, err := GetFreshStravaToken(ctx, user)
 		if err != nil {
 			log.Printf("Error getting fresh Strava token for routes page initial load: %v", err)
-			// User will see an error in the form, but page will still load other content
 		} else {
 			var fetchErr error
 			stravaUserRoutesForDropdown, fetchErr = fetchStravaUserRoutes(ctx, accessToken, user.StravaID)
 			if fetchErr != nil {
 				log.Printf("Error fetching Strava routes for routes page initial load: %v", fetchErr)
-				// User will see an error in the form if routes couldn't be loaded
 			}
 		}
 		stravaUserRoutesOptions = buildStravaRouteOptions(stravaUserRoutesForDropdown, "")
 	}
+
 	data := TemplateData{
 		Location:         "Borrowash, Derbyshire",
 		CurrentYear:      time.Now().Year(),
 		IsLoggedIn:       true,
 		User:             user,
 		IsAdmin:          user.IsAdmin,
-		Routes:           routes,                  // All club routes
-		UserRoutes:       userSubmittedRoutes,     // User's previously submitted club routes
-		StravaUserRoutes: stravaUserRoutesOptions, // Pass HTML string to template
-		CSSVersion:       cssVersion,              // Use Unix timestamp for cache busting
+		Routes:           routes,
+		UserRoutes:       userSubmittedRoutes,
+		StravaUserRoutes: stravaUserRoutesOptions,
+		CSSVersion:       cssVersion,
 	}
 
 	err = tmpl.ExecuteTemplate(w, "routes.html", data) // Render routes template
@@ -496,7 +493,7 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			bodyBytes, _ := io.ReadAll(resp.Body) // updated from ioutil.ReadAll
+			bodyBytes, _ := io.ReadAll(resp.Body)
 			log.Printf("Strava API specific route fetch failed. Status: %d, Body: %s", resp.StatusCode, string(bodyBytes))
 			http.Error(w, "Failed to retrieve Strava route details", http.StatusInternalServerError)
 			return
@@ -509,6 +506,21 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// --- Duplicate name check (regardless of user) ---
+		allRoutes, err := GetAllRoutes(ctx)
+		if err != nil {
+			log.Printf("Error fetching all routes for duplicate name check: %v", err)
+			http.Error(w, "Failed to check for duplicate routes", http.StatusInternalServerError)
+			return
+		}
+		for _, r := range allRoutes {
+			if strings.EqualFold(r.Name, stravaRouteDetail.Name) {
+				http.Error(w, "A route with this name already exists in the club.", http.StatusBadRequest)
+				return
+			}
+		}
+		// --- End duplicate name check ---
+
 		routeToSave = &Route{
 			Name:                stravaRouteDetail.Name,
 			URL:                 fmt.Sprintf("https://www.strava.com/routes/%d", stravaRouteDetail.ID),
@@ -517,7 +529,6 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 			SubmittedAt:         time.Now(),
 		}
 	} else {
-		// If neither selectedRouteID nor stravaRouteSelectID is present, it's an invalid submission.
 		http.Error(w, "No route selected or invalid submission method", http.StatusBadRequest)
 		return
 	}
@@ -554,7 +565,7 @@ func submitRouteHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data := TemplateData{ // Populate data for the fragment
+	data := TemplateData{
 		IsLoggedIn: true,
 		User:       user,
 		IsAdmin:    user.IsAdmin,
@@ -646,6 +657,11 @@ func deleteRouteHandler(w http.ResponseWriter, r *http.Request) {
 
 // Helper to build <option> HTML for Strava routes
 func buildStravaRouteOptions(routes []StravaRouteAPI, query string) string {
+	// Sort routes alphabetically by Name (case-insensitive)
+	sort.Slice(routes, func(i, j int) bool {
+		return strings.ToLower(routes[i].Name) < strings.ToLower(routes[j].Name)
+	})
+
 	var optionsHTML strings.Builder
 	if len(routes) == 0 {
 		if query != "" {
@@ -654,6 +670,7 @@ func buildStravaRouteOptions(routes []StravaRouteAPI, query string) string {
 			optionsHTML.WriteString(`<option value="" disabled>-- No Strava Routes found --</option>`)
 		}
 	} else {
+		optionsHTML.WriteString(`<option value="" disabled selected>Select a Strava Route</option>`)
 		for _, route := range routes {
 			optionsHTML.WriteString(fmt.Sprintf(
 				`<option value="%d">%s (%.1fkm, %.0fm Gain)</option>`,
