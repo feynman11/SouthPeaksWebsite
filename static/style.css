@@ -806,6 +806,22 @@ body {
   transition: border-color 0.2s ease;
 }
 
+/* Make both selects look the same */
+.submit-route-form select,
+.submit-route-form select:focus {
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+  background: #fff;
+  appearance: none;
+  /* Remove default arrow for custom styling if needed */
+}
+
 .form-group input[type="text"]:focus,
 .form-group input[type="url"]:focus,
 .form-group select:focus,
