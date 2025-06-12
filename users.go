@@ -138,7 +138,6 @@ func GetFreshStravaToken(ctx context.Context, user *User) (string, error) {
 			return "", fmt.Errorf("failed to refresh Strava token: %w", err)
 		}
 	}
-	log.Printf("Using Strava token for user %d", user.StravaID)
 
 	return user.AccessToken, nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -28,6 +29,7 @@ var (
 	stravaOAuthConf *oauth2.Config
 	mongoClient     *mongo.Client
 	mongoDB         *mongo.Database
+	cssVersion      = fmt.Sprintf("%d", time.Now().Unix()) // Use Unix timestamp as string for cache busting
 )
 
 // TemplateData holds data to be passed to HTML templates
@@ -43,6 +45,7 @@ type TemplateData struct {
 	Routes           []Route // For routes page (all club routes)
 	UserRoutes       []Route // For routes page (user's own submitted routes)
 	StravaUserRoutes string
+	CSSVersion       string // Add this line
 }
 
 var tmpl *template.Template
@@ -190,6 +193,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		IsLoggedIn:   isLoggedIn,
 		User:         user,
 		IsAdmin:      currentIsAdmin,
+		CSSVersion:   cssVersion, // Use Unix timestamp for cache busting
 	}
 
 	err := tmpl.ExecuteTemplate(w, "index.html", data)

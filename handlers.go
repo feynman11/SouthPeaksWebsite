@@ -184,6 +184,7 @@ func membersHandler(w http.ResponseWriter, r *http.Request) {
 		User:        user,
 		IsAdmin:     user.IsAdmin,
 		Members:     members,
+		CSSVersion:  cssVersion, // Use Unix timestamp for cache busting
 	}
 
 	err = tmpl.ExecuteTemplate(w, "members.html", data) // Render members template
@@ -342,6 +343,7 @@ func routesHandler(w http.ResponseWriter, r *http.Request) {
 		Routes:           routes,                  // All club routes
 		UserRoutes:       userSubmittedRoutes,     // User's previously submitted club routes
 		StravaUserRoutes: stravaUserRoutesOptions, // Pass HTML string to template
+		CSSVersion:       cssVersion,              // Use Unix timestamp for cache busting
 	}
 
 	err = tmpl.ExecuteTemplate(w, "routes.html", data) // Render routes template
@@ -374,7 +376,6 @@ func fetchStravaUserRoutes(ctx context.Context, accessToken string, athleteID in
 	if err := json.NewDecoder(resp.Body).Decode(&stravaRoutes); err != nil {
 		return nil, fmt.Errorf("failed to decode Strava routes JSON: %w", err)
 	}
-	log.Printf("Fetched %d routes from Strava API for athlete %d", len(stravaRoutes), athleteID)
 
 	return stravaRoutes, nil
 }
